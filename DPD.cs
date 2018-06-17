@@ -69,7 +69,7 @@ public class DPDSim
     // System definition (we assume these don't change)
     //
     public double[] cell;
-    public List<DPDSiteType> site_types;    
+    public List<DPDSiteType> site_types;
     public List<DPDMoleculeType> molecule_types;
 
     //
@@ -127,12 +127,42 @@ public class DPDSim
     {
         cell = new double[3];
         pressure = new double[9];
+
+        site_types = new List<DPDSiteType>();
+        molecule_types = new List<DPDMoleculeType>();
+
+        site_ids = new List<int>();
+        r = new List<double>();
+        v = new List<double>();
+        f = new List<double>();
+
+        v_ = new List<double>();
+        f_ = new List<double>();
+
+        interactions = new List<double>();
+        exclude = new List<int>();
+
+        bond_site_indices = new List<int>();
+        bond_eq = new List<double>();
+        bond_k = new List<double>();
+
+        angle_site_indices = new List<int>();
+        angle_eq = new List<double>();
+        angle_k = new List<double>();
+
+        cell_next = new List<int>();
+        cell_head = new List<int>();
+        cell_neighbours = new List<int>();
+
+        Clear();
     }
         
     public void Clear()
     {
-        site_ids.Clear();
+        site_types.Clear();
+        molecule_types.Clear();
 
+        site_ids.Clear();
         r.Clear();
         v.Clear();
         f.Clear();
@@ -140,8 +170,8 @@ public class DPDSim
         v_.Clear();
         f_.Clear();
 
-        site_types.Clear();
-        molecule_types.Clear();
+        interactions.Clear();
+        exclude.Clear();
 
         bond_site_indices.Clear();
         bond_eq.Clear();
