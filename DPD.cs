@@ -78,7 +78,9 @@ public class DPDSim
     // Per-particle information
     //
     public List<int> site_ids = new List<int>();
-    public List<double> r, v, f;
+    public List<double> r = new List<double>();
+    public List<double> v = new List<double>();
+    public List<double> f = new List<double>();
 
     //
     // Nonbonded interaction information

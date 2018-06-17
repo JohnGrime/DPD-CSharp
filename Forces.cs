@@ -325,12 +325,22 @@ public class Forces
         var ncellx = (int) Math.Floor(sim.cell[0]/sim.rcut);
         var ncelly = (int) Math.Floor(sim.cell[1]/sim.rcut);
         var ncellz = (int) Math.Floor(sim.cell[2]/sim.rcut);
-        if( ncellx < 3 || ncelly < 3 || ncellz < 3 ) DPDError( "A cell dimension has fewer than 3 cells; this is a linked list cell error." );         
+        if( ncellx < 3 || ncelly < 3 || ncellz < 3 )
+        {
+            DPDError( "A cell dimension has fewer than 3 cells; this is a linked list cell error." );
+        }
+        var ncells = ncellx*ncelly*ncellz;
 
         //
         // If we're using a dynamic simulation cell, uncomment the following line!
         //
         //SetupCells( sim );
+
+        if( sim.cell_head.Count != ncells )
+        {
+            DPDError( "sim.cell_head.Count ({0}) != ncells ({1}); did you call SetupCells()?",
+                sim.cell_head.Count, ncells );
+        }
 
         // reset head indices.
         for( var i=0; i<sim.cell_head.Count; i++ ) sim.cell_head[i] = -1;
