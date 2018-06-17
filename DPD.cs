@@ -45,8 +45,8 @@ public class DPDSim
     //
     // Neighbour cell information
     //
-    private readonly static int nneighbours = 14;
-    private readonly static int[] neighbour_offsets = new int[] {
+    public readonly static int nneighbours = 14;
+    public readonly static int[] neighbour_offsets = new int[] {
          0, 0, 0, // current cell!
          1, 0, 0,
          1, 1, 0,
@@ -207,16 +207,16 @@ public class DPDSim
     //
     public void ZeroMomentum()
     {
-        int N_sites = site_ids.Count;
-        double[] net_m = new double[3];
+        var N_sites = site_ids.Count;
+        var net_m = new double[3];
 
         net_m[0] = 0.0;
         net_m[1] = 0.0;
         net_m[2] = 0.0;
 
-        for( int i=0; i<N_sites; i++ )
+        for( var i=0; i<N_sites; i++ )
         {
-            int j = i*3;
+            var j = i*3;
             net_m[0] += v[ j+0 ];
             net_m[1] += v[ j+1 ];
             net_m[2] += v[ j+2 ];
@@ -226,9 +226,9 @@ public class DPDSim
         net_m[1] = net_m[1] / N_sites;
         net_m[2] = net_m[2] / N_sites;
 
-        for( int i=0; i<N_sites; i++ )
+        for( var i=0; i<N_sites; i++ )
         {
-            int j = i*3; 
+            var j = i*3; 
             v[ j+0 ] -= net_m[0];
             v[ j+1 ] -= net_m[1];
             v[ j+2 ] -= net_m[2];
@@ -243,29 +243,29 @@ public class DPDSim
         //
         // Check for bad counts; minimum number of cells on any dimension is three.
         //
-        int ncellx = (int) Math.Floor(cell[0]/rcut);
-        int ncelly = (int) Math.Floor(cell[1]/rcut);
-        int ncellz = (int) Math.Floor(cell[2]/rcut);
-        int ncells = ncellx*ncelly*ncellz;
+        var ncellx = (int) Math.Floor(cell[0]/rcut);
+        var ncelly = (int) Math.Floor(cell[1]/rcut);
+        var ncellz = (int) Math.Floor(cell[2]/rcut);
+        var ncells = ncellx*ncelly*ncellz;
         
 //            if( ncellx < 3 || ncelly < 3 || ncellz < 3 ) DPD_ERROR( "A cell dimension has fewer than 3 cells; this is a linked list cell error." );         
             
         cell_head.Capacity = ncells;
         cell_neighbours.Capacity = ncells*nneighbours;
 
-        for( int cellz=0; cellz<ncellz; cellz++ )
+        for( var cellz=0; cellz<ncellz; cellz++ )
         {
-            for( int celly=0; celly<ncelly; celly++ )
+            for( var celly=0; celly<ncelly; celly++ )
             {
-                for( int cellx=0; cellx<ncellx; cellx++ )
+                for( var cellx=0; cellx<ncellx; cellx++ )
                 {
-                    int cell_no = cellx + (celly*ncellx) + (cellz*ncelly*ncellx);
-                    for( int l=0; l<nneighbours; l++ )
+                    var cell_no = cellx + (celly*ncellx) + (cellz*ncelly*ncellx);
+                    for( var l=0; l<nneighbours; l++ )
                     {
                         // get cell coords of current neighbour
-                        int i = cellx + neighbour_offsets[ (l*3)+0 ];
-                        int j = celly + neighbour_offsets[ (l*3)+1 ];
-                        int k = cellz + neighbour_offsets[ (l*3)+2 ];
+                        var i = cellx + neighbour_offsets[ (l*3)+0 ];
+                        var j = celly + neighbour_offsets[ (l*3)+1 ];
+                        var k = cellz + neighbour_offsets[ (l*3)+2 ];
                         
                         // wrap cell lattice coords across periodic boundaries
                         if( i == -1 ) i = ncellx - 1;

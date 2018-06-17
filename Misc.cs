@@ -13,7 +13,6 @@ public class Misc
     //
     public static void VecMinimumImage( ref double[] v1, ref double[] dest, ref double[] cell )
     {
-//        double[] temp_vec = new double[3];
         var temp_vec = new double[3];
 
         temp_vec[0] = v1[0] - cell[0] * Math.Round( v1[0]/cell[0], MidpointRounding.AwayFromZero );

@@ -8,7 +8,7 @@ public class Integrator
 {
     static public void VelocityVerlet( ref DPDSim sim )
     {
-        int N_sites = sim.site_ids.Count;
+        var N_sites = sim.site_ids.Count;
 
         double dt = sim.delta_t;
         double h_dt_sq = 0.5*(dt*dt);
@@ -16,9 +16,9 @@ public class Integrator
         //
         // Advance positions.
         //
-        for( int site_i=0; site_i<N_sites; site_i++ )
+        for( var site_i=0; site_i<N_sites; site_i++ )
         {
-            int s = site_i*3;
+            var s = site_i*3;
             
             // calculate new positions
             sim.r[s+0] += dt*sim.v[s+0] + h_dt_sq*sim.f[s+0];
@@ -72,9 +72,9 @@ public class Integrator
         
         // correct the velocities using the two force arrays.
         sim.kinetic_energy = 0.0;
-        for( int site_i=0; site_i<N_sites; site_i++ )
+        for( var site_i=0; site_i<N_sites; site_i++ )
         {
-            int s = site_i*3;
+            var s = site_i*3;
             
             sim.v[s+0] = sim.v_[s+0] + 0.5*dt*( sim.f_[s+0] + sim.f[s+0] );
             sim.v[s+1] = sim.v_[s+1] + 0.5*dt*( sim.f_[s+1] + sim.f[s+1] );
@@ -102,7 +102,7 @@ public class Integrator
             
         // divide all tensor elements by sim volume
         double volume = sim.cell[0]*sim.cell[1]*sim.cell[2];
-        for( int i=0; i<9; i++ ) sim.pressure[i] /= volume;            
+        for( var i=0; i<9; i++ ) sim.pressure[i] /= volume;            
     }
 }
 
