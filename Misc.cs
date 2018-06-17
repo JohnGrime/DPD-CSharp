@@ -27,12 +27,12 @@ public class Misc
 
     public static void DPDError( string fmt, params object[] args )
     {
-        var sf = new StackTrace().GetFrame( 1 );
+        var sf = new StackTrace( fNeedFileInfo: true ).GetFrame( 1 );
 
         Console.WriteLine( "ERROR:" );
-        Console.WriteLine( "In file: {0}", sf.GetFileName() );
-        Console.WriteLine( "In method: {0}", sf.GetMethod() );
-        Console.WriteLine( "On line: {0}", sf.GetFileLineNumber() );
+        Console.WriteLine( "File: {0}", sf.GetFileName() );
+        Console.WriteLine( "Method: {0}", sf.GetMethod() );
+        Console.WriteLine( "Line: {0}", sf.GetFileLineNumber() );
         Console.WriteLine( "Message: ${0}", string.Format( fmt, args ) );
 
         Environment.Exit( -1 );
