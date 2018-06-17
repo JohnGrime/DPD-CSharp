@@ -8,22 +8,24 @@ namespace DPD
     
 public class DPDSiteType
 {
-    public string name;
-    public int internal_id;
+    public string name = "";
+    public int internal_id = 0;
 }
 
 public class DPDMoleculeType
 {
-    public string name;
-    public int count;
+    public string name = "";
+    public int count = 0;
 
-    public List<int> site_internal_ids;
+    public List<int> site_internal_ids = new List<int>();
 
-    public List<int> bond_site_indices;
-    public List<double> bond_eq, bond_k;
+    public List<int> bond_site_indices = new List<int>();
+    public List<double> bond_eq = new List<double>();
+    public List<double> bond_k = new List<double>();
 
-    public List<int> angle_site_indices;
-    public List<double> angle_eq, angle_k;
+    public List<int> angle_site_indices = new List<int>();
+    public List<double> angle_eq = new List<double>();
+    public List<double> angle_k = new List<double>();
 
     public void Clear()
     {
