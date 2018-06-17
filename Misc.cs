@@ -13,7 +13,8 @@ public class Misc
     //
     public static void VecMinimumImage( ref double[] v1, ref double[] dest, ref double[] cell )
     {
-        double[] temp_vec = new double[3];
+//        double[] temp_vec = new double[3];
+        var temp_vec = new double[3];
 
         temp_vec[0] = v1[0] - cell[0] * Math.Round( v1[0]/cell[0], MidpointRounding.AwayFromZero );
         temp_vec[1] = v1[1] - cell[1] * Math.Round( v1[1]/cell[1], MidpointRounding.AwayFromZero );
@@ -26,12 +27,14 @@ public class Misc
 
     public static void DPDError( string fmt, params object[] args )
     {
-        StackTrace st = new StackTrace();
-        StackFrame sf = st.GetFrame( 1 );
-        Console.WriteLine( sf.GetFileName() );
-        Console.WriteLine( sf.GetMethod() );
-        Console.WriteLine( sf.GetFileLineNumber() );
-        Console.WriteLine( string.Format( fmt, args ) );
+        var sf = new StackTrace().GetFrame( 1 );
+
+        Console.WriteLine( "ERROR:" );
+        Console.WriteLine( "In file: {0}", sf.GetFileName() );
+        Console.WriteLine( "In method: {0}", sf.GetMethod() );
+        Console.WriteLine( "On line: {0}", sf.GetFileLineNumber() );
+        Console.WriteLine( "Message: ${0}", string.Format( fmt, args ) );
+
         Environment.Exit( -1 );
     }
 }
