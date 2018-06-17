@@ -66,7 +66,7 @@ public class DPDSim
     //
     // System definition (we assume these don't change)
     //
-    public List<double> cell;
+    public double[] cell;
     public List<DPDSiteType> site_types;    
     public List<DPDMoleculeType> molecule_types;
 
@@ -100,7 +100,7 @@ public class DPDSim
     //
     public double target_kBT;
     public double kinetic_energy, nonbonded_energy, bond_energy, angle_energy;
-    public List<double> pressure;
+    public double[] pressure;
 
     //
     // DPD-specific information
@@ -123,8 +123,8 @@ public class DPDSim
 
     public DPDSim()
     {
-        cell.Capacity = 3;
-        pressure.Capacity = 9;
+        cell = new double[3];
+        pressure = new double[9];
     }
         
     public void Clear()
@@ -149,11 +149,8 @@ public class DPDSim
         angle_eq.Clear();
         angle_k.Clear();
 
-        cell.Capacity = 3;
-        for( var i=0; i<cell.Count; i++ ) cell[i] = 10.0;
-
-        pressure.Capacity = 9;
-        for( var i=0; i<pressure.Count; i++ ) pressure[i] = 0.0;
+        for( var i=0; i<3; i++ ) cell[i] = 10.0;
+        for( var i=0; i<9; i++ ) pressure[i] = 0.0;
 
         step_no = 0;
         max_steps = 10000;
@@ -181,7 +178,7 @@ public class DPDSim
         bond_energy = 0.0;
         angle_energy = 0.0;
 
-        for( var i=0; i<pressure.Count; i++ ) pressure[i] = 0.0;
+        for( var i=0; i<9; i++ ) pressure[i] = 0.0;
 
         ninteractions = 0.0;        
     }

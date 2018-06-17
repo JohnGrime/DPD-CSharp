@@ -102,7 +102,7 @@ public class Integrator
             
         // divide all tensor elements by sim volume
         double volume = sim.cell[0]*sim.cell[1]*sim.cell[2];
-        for( int s=0; s<sim.pressure.Count; s++ ) sim.pressure[s] /= volume;            
+        for( int i=0; i<9; i++ ) sim.pressure[i] /= volume;            
     }
 }
 

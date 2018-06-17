@@ -33,7 +33,7 @@ public class Misc
         Console.WriteLine( "File: {0}", sf.GetFileName() );
         Console.WriteLine( "Method: {0}", sf.GetMethod() );
         Console.WriteLine( "Line: {0}", sf.GetFileLineNumber() );
-        Console.WriteLine( "Message: ${0}", string.Format( fmt, args ) );
+        Console.WriteLine( "Message: {0}", string.Format( fmt, args ) );
 
         Environment.Exit( -1 );
     }
