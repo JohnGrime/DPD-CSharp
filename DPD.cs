@@ -1,0 +1,292 @@
+using System;
+using System.Collections.Generic;
+
+namespace DPD
+{
+    
+public class DPDSiteType
+{
+    public string name;
+    public int internal_id;
+}
+
+public class DPDMoleculeType
+{
+    public string name;
+    public int count;
+
+    public List<int> site_internal_ids;
+
+    public List<int> bond_site_indices;
+    public List<double> bond_eq, bond_k;
+
+    public List<int> angle_site_indices;
+    public List<double> angle_eq, angle_k;
+
+    public void Clear()
+    {
+        name = "";
+        count = 0;
+
+        site_internal_ids.Clear();
+        
+        bond_site_indices.Clear();
+        bond_eq.Clear();
+        bond_k.Clear();
+
+        angle_site_indices.Clear();
+        angle_eq.Clear();
+        angle_k.Clear();
+    }
+}
+
+public class DPDSim
+{
+    //
+    // Neighbour cell information
+    //
+    private readonly static int nneighbours = 14;
+    private readonly static int[] neighbour_offsets = new int[] {
+         0, 0, 0, // current cell!
+         1, 0, 0,
+         1, 1, 0,
+        -1, 1, 0,
+         0, 1, 0,
+         0, 0, 1,
+        -1, 0, 1,
+         1, 0, 1,
+        -1,-1, 1,
+         0,-1, 1,
+         1,-1, 1,
+        -1, 1, 1,
+         0, 1, 1,
+         1, 1, 1
+    };
+
+    //
+    // System definition (we assume these don't change)
+    //
+    public List<double> cell;
+    public List<DPDSiteType> site_types;    
+    public List<DPDMoleculeType> molecule_types;
+
+    //
+    // Per-particle information
+    //
+    public List<int> site_ids;
+    public List<double> r, v, f;
+
+    //
+    // Nonbonded interaction information
+    //
+    public double rcut, ninteractions;
+    public List<double> interactions;
+    public List<int> exclude;
+
+    //
+    // Bond interaction information
+    //
+    public List<int> bond_site_indices;
+    public List<double> bond_eq, bond_k;
+    
+    //
+    // Angle interaction information
+    //
+    public List<int> angle_site_indices;
+    public List<double> angle_eq, angle_k;
+
+    //
+    // Virial-related inforamtion
+    //
+    public double target_kBT;
+    public double kinetic_energy, nonbonded_energy, bond_energy, angle_energy;
+    public List<double> pressure;
+
+    //
+    // DPD-specific information
+    //
+    public double lambda, sigma, fric;
+    
+    //
+    // Intervals & integration
+    //
+    public int step_no, max_steps, save_every, print_every;
+    public double delta_t;
+    
+    //
+    // Misc
+    //
+    public List<double> v_, f_; // temporary stores of v and f vectors
+    public List<int> cell_next, cell_head, cell_neighbours; // for link cells
+    public long ran1_value;
+    public int i_am_dumb;
+
+    public DPDSim()
+    {
+        cell.Capacity = 3;
+        pressure.Capacity = 9;
+    }
+        
+    public void Clear()
+    {
+        site_ids.Clear();
+
+        r.Clear();
+        v.Clear();
+        f.Clear();
+
+        v_.Clear();
+        f_.Clear();
+
+        site_types.Clear();
+        molecule_types.Clear();
+
+        bond_site_indices.Clear();
+        bond_eq.Clear();
+        bond_k.Clear();
+
+        angle_site_indices.Clear();
+        angle_eq.Clear();
+        angle_k.Clear();
+
+        cell.Capacity = 3;
+        for( var i=0; i<cell.Count; i++ ) cell[i] = 10.0;
+
+        pressure.Capacity = 9;
+        for( var i=0; i<pressure.Count; i++ ) pressure[i] = 0.0;
+
+        step_no = 0;
+        max_steps = 10000;
+        save_every = 1000;
+        print_every = 1000;
+
+        delta_t = 0.01;
+
+        lambda = 0.65;
+        sigma = 3.0;
+        rcut = 1.0;
+        target_kBT = 1.0;
+
+        ran1_value = -1;
+        
+        i_am_dumb = 0;
+
+        ClearEnergyAndPressure();
+    }
+
+    public void ClearEnergyAndPressure()
+    {
+        kinetic_energy = 0.0;
+        nonbonded_energy = 0.0;
+        bond_energy = 0.0;
+        angle_energy = 0.0;
+
+        for( var i=0; i<pressure.Count; i++ ) pressure[i] = 0.0;
+
+        ninteractions = 0.0;        
+    }
+
+    //
+    // Use Gaussian distribution to set initial velocities.
+    //
+    public void SetInitialVelocities()
+    {
+        // 0.5mv**2 = 3/2kBT.
+        // v = sqrt( 3kBT / m )
+
+        double factor = Math.Sqrt( 3.0*target_kBT ) / 3.0; // divide evenly across degs of freedom for v components
+        for( var i=0; i<site_ids.Count; i++ )
+        {
+            var j = i*3;
+
+            v[ j+0 ] = Ran1.gasdev( ref ran1_value ) * factor;
+            v[ j+1 ] = Ran1.gasdev( ref ran1_value ) * factor;
+            v[ j+2 ] = Ran1.gasdev( ref ran1_value ) * factor;
+        }
+    }
+
+    //
+    // Remove any net momentum from the system (assumes all particles same mass)
+    //
+    public void ZeroMomentum()
+    {
+        int N_sites = site_ids.Count;
+        double[] net_m = new double[3];
+
+        net_m[0] = 0.0;
+        net_m[1] = 0.0;
+        net_m[2] = 0.0;
+
+        for( int i=0; i<N_sites; i++ )
+        {
+            int j = i*3;
+            net_m[0] += v[ j+0 ];
+            net_m[1] += v[ j+1 ];
+            net_m[2] += v[ j+2 ];
+        }
+
+        net_m[0] = net_m[0] / N_sites;
+        net_m[1] = net_m[1] / N_sites;
+        net_m[2] = net_m[2] / N_sites;
+
+        for( int i=0; i<N_sites; i++ )
+        {
+            int j = i*3; 
+            v[ j+0 ] -= net_m[0];
+            v[ j+1 ] -= net_m[1];
+            v[ j+2 ] -= net_m[2];
+        }
+    }
+
+    //
+    // Generate the neighbour cells.
+    //
+    public void SetupCells()
+    {   
+        //
+        // Check for bad counts; minimum number of cells on any dimension is three.
+        //
+        int ncellx = (int) Math.Floor(cell[0]/rcut);
+        int ncelly = (int) Math.Floor(cell[1]/rcut);
+        int ncellz = (int) Math.Floor(cell[2]/rcut);
+        int ncells = ncellx*ncelly*ncellz;
+        
+//            if( ncellx < 3 || ncelly < 3 || ncellz < 3 ) DPD_ERROR( "A cell dimension has fewer than 3 cells; this is a linked list cell error." );         
+            
+        cell_head.Capacity = ncells;
+        cell_neighbours.Capacity = ncells*nneighbours;
+
+        for( int cellz=0; cellz<ncellz; cellz++ )
+        {
+            for( int celly=0; celly<ncelly; celly++ )
+            {
+                for( int cellx=0; cellx<ncellx; cellx++ )
+                {
+                    int cell_no = cellx + (celly*ncellx) + (cellz*ncelly*ncellx);
+                    for( int l=0; l<nneighbours; l++ )
+                    {
+                        // get cell coords of current neighbour
+                        int i = cellx + neighbour_offsets[ (l*3)+0 ];
+                        int j = celly + neighbour_offsets[ (l*3)+1 ];
+                        int k = cellz + neighbour_offsets[ (l*3)+2 ];
+                        
+                        // wrap cell lattice coords across periodic boundaries
+                        if( i == -1 ) i = ncellx - 1;
+                        else if( i == ncellx ) i = 0;
+
+                        if( j == -1 ) j = ncelly - 1;
+                        else if( j == ncelly ) j = 0;
+
+                        if( k == -1 ) k = ncellz - 1;
+                        else if( k == ncellz ) k = 0;
+
+                        // record the neighbour index for this cell
+                        cell_neighbours[ (cell_no*nneighbours) + l ] = i + (j*ncellx) + (k*ncelly*ncellx);
+                    }
+                }
+            }
+        }
+    }
+}
+
+}
