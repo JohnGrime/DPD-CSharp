@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 
 using static DPD.Misc;
 
@@ -6,6 +7,30 @@ namespace DPD
 {
     class Program
     {
+        /*
+        private static void save_checkpoint_and_trajectory( ref DPDSim sim )
+        {
+
+            try
+            {
+                using( StreamWriter f = File.CreateText("output.checkpoint") )
+                {
+//                    SaveDPDSim( ref f, ref sim );
+                }
+            }
+            catch( Exception ) { Console.WriteLine( "Unable to write checkpoint." ); }
+
+            try
+            {
+                using( StreamWriter f = File.AppendText("output.lammpstrj") )
+                {
+//                    SaveDPDSim( ref f, ref sim );
+                }
+            }
+            catch( Exception ) { Console.WriteLine( "Unable to write trajectory frame." ); }
+        }
+        */
+
         static void Main( string[] args )
         {
         	if( Environment.GetCommandLineArgs().Length < 2 )

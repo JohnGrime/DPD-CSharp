@@ -213,8 +213,8 @@ public class Forces
         }
         
         // offset into the positions arrays for sites i and j. Flat arrays, so each position is 3 consecutive numbers.
-        int i_off = i*3;
-        int j_off = j*3;
+        var i_off = i*3;
+        var j_off = j*3;
 
         r[0] = sim.r[ i_off+0 ] - sim.r[ j_off+0 ];
         r[1] = sim.r[ i_off+1 ] - sim.r[ j_off+1 ];
@@ -301,9 +301,9 @@ public class Forces
         double cutsq = sim.rcut * sim.rcut;   // precalculate
         double sqrt_dt = Math.Sqrt( sim.delta_t ); // precalculate
         
-        for( int i=0; i<N; i++ )
+        for( var i=0; i<N; i++ )
         {
-            for( int j=i+1; j<N; j++ )
+            for( var j=i+1; j<N; j++ )
             {
                 nonbonded_pair( i, j, cutsq, sqrt_dt, ref sim );
             }
@@ -322,9 +322,9 @@ public class Forces
         double cutsq = sim.rcut * sim.rcut;
         double sqrt_dt = Math.Sqrt( sim.delta_t );
         
-        int ncellx = (int) Math.Floor(sim.cell[0]/sim.rcut);
-        int ncelly = (int) Math.Floor(sim.cell[1]/sim.rcut);
-        int ncellz = (int) Math.Floor(sim.cell[2]/sim.rcut);
+        var ncellx = (int) Math.Floor(sim.cell[0]/sim.rcut);
+        var ncelly = (int) Math.Floor(sim.cell[1]/sim.rcut);
+        var ncellz = (int) Math.Floor(sim.cell[2]/sim.rcut);
         if( ncellx < 3 || ncelly < 3 || ncellz < 3 ) DPDError( "A cell dimension has fewer than 3 cells; this is a linked list cell error." );         
 
         //

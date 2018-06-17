@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 
+using static DPD.Misc;
+
 namespace DPD
 {
     
@@ -248,7 +250,7 @@ public class DPDSim
         var ncellz = (int) Math.Floor(cell[2]/rcut);
         var ncells = ncellx*ncelly*ncellz;
         
-//            if( ncellx < 3 || ncelly < 3 || ncellz < 3 ) DPD_ERROR( "A cell dimension has fewer than 3 cells; this is a linked list cell error." );         
+        if( ncellx < 3 || ncelly < 3 || ncellz < 3 ) DPDError( "A cell dimension has fewer than 3 cells; this is a linked list cell error." );         
             
         cell_head.Capacity = ncells;
         cell_neighbours.Capacity = ncells*nneighbours;
