@@ -68,41 +68,43 @@ public class DPDSim
     //
     // System definition (we assume these don't change)
     //
-    public double[] cell;
-    public List<DPDSiteType> site_types;
-    public List<DPDMoleculeType> molecule_types;
+    public double[] cell = new double[3];
+    public List<DPDSiteType> site_types = new List<DPDSiteType>();
+    public List<DPDMoleculeType> molecule_types = new List<DPDMoleculeType>();
 
     //
     // Per-particle information
     //
-    public List<int> site_ids;
+    public List<int> site_ids = new List<int>();
     public List<double> r, v, f;
 
     //
     // Nonbonded interaction information
     //
     public double rcut, ninteractions;
-    public List<double> interactions;
-    public List<int> exclude;
+    public List<double> interactions = new List<double>();
+    public List<int> exclude = new List<int>();
 
     //
     // Bond interaction information
     //
-    public List<int> bond_site_indices;
-    public List<double> bond_eq, bond_k;
+    public List<int> bond_site_indices = new List<int>();
+    public List<double> bond_eq = new List<double>();
+    public List<double> bond_k = new List<double>();
     
     //
     // Angle interaction information
     //
-    public List<int> angle_site_indices;
-    public List<double> angle_eq, angle_k;
+    public List<int> angle_site_indices = new List<int>();
+    public List<double> angle_eq = new List<double>();
+    public List<double> angle_k = new List<double>();
 
     //
     // Virial-related inforamtion
     //
     public double target_kBT;
     public double kinetic_energy, nonbonded_energy, bond_energy, angle_energy;
-    public double[] pressure;
+    public double[] pressure = new double[9];
 
     //
     // DPD-specific information
@@ -118,42 +120,16 @@ public class DPDSim
     //
     // Misc
     //
-    public List<double> v_, f_; // temporary stores of v and f vectors
-    public List<int> cell_next, cell_head, cell_neighbours; // for link cells
+    public List<double> v_ = new List<double>();
+    public List<double> f_ = new List<double>();
+    public List<int> cell_next = new List<int>();
+    public List<int> cell_head = new List<int>();
+    public List<int> cell_neighbours = new List<int>();
     public long ran1_value;
     public int i_am_dumb;
 
     public DPDSim()
     {
-        cell = new double[3];
-        pressure = new double[9];
-
-        site_types = new List<DPDSiteType>();
-        molecule_types = new List<DPDMoleculeType>();
-
-        site_ids = new List<int>();
-        r = new List<double>();
-        v = new List<double>();
-        f = new List<double>();
-
-        v_ = new List<double>();
-        f_ = new List<double>();
-
-        interactions = new List<double>();
-        exclude = new List<int>();
-
-        bond_site_indices = new List<int>();
-        bond_eq = new List<double>();
-        bond_k = new List<double>();
-
-        angle_site_indices = new List<int>();
-        angle_eq = new List<double>();
-        angle_k = new List<double>();
-
-        cell_next = new List<int>();
-        cell_head = new List<int>();
-        cell_neighbours = new List<int>();
-
         Clear();
     }
         
