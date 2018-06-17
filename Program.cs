@@ -7,7 +7,6 @@ namespace DPD
 {
     class Program
     {
-        /*
         private static void save_checkpoint_and_trajectory( ref DPDSim sim )
         {
 
@@ -29,7 +28,6 @@ namespace DPD
             }
             catch( Exception ) { Console.WriteLine( "Unable to write trajectory frame." ); }
         }
-        */
 
         static void Main( string[] args )
         {
