@@ -10,17 +10,14 @@ public class Misc
     // Given the positions of 2 sites, and the simulation cell, this routine calculates
     // the minimum distance between the sites given periodic boundary conditions.
     //
-    public static void VecMinimumImage( ref double[] v1, ref double[] dest, ref double[] cell )
+    public static void VecMinimumImage(
+            double x,      double y,      double z,
+        ref double x_, ref double y_, ref double z_,
+        ref double[] cell )
     {
-        var temp_vec = new double[3];
-
-        temp_vec[0] = v1[0] - cell[0] * Math.Round( v1[0]/cell[0], MidpointRounding.AwayFromZero );
-        temp_vec[1] = v1[1] - cell[1] * Math.Round( v1[1]/cell[1], MidpointRounding.AwayFromZero );
-        temp_vec[2] = v1[2] - cell[2] * Math.Round( v1[2]/cell[2], MidpointRounding.AwayFromZero );
-
-        dest[0] = temp_vec[0];
-        dest[1] = temp_vec[1];
-        dest[2] = temp_vec[2];
+        x_ = x - cell[0] * Math.Round( x/cell[0], MidpointRounding.AwayFromZero );
+        y_ = y - cell[1] * Math.Round( y/cell[1], MidpointRounding.AwayFromZero );
+        z_ = z - cell[2] * Math.Round( z/cell[2], MidpointRounding.AwayFromZero );
     }
 
     public static void DPDError( string fmt, params object[] args )

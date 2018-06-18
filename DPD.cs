@@ -46,6 +46,8 @@ public class DPDMoleculeType
 
 public class DPDSim
 {
+    public readonly static int MaxExclusionEntries = 4;
+
     //
     // Neighbour cell information
     //
@@ -104,7 +106,7 @@ public class DPDSim
     public List<double> angle_k = new List<double>();
 
     //
-    // Virial-related inforamtion
+    // Virial-related information
     //
     public double target_kBT;
     public double kinetic_energy, nonbonded_energy, bond_energy, angle_energy;
@@ -261,9 +263,12 @@ public class DPDSim
         var ncells = ncellx*ncelly*ncellz;
         
         if( ncellx < 3 || ncelly < 3 || ncellz < 3 ) DPDError( "A cell dimension has fewer than 3 cells; this is a linked list cell error." );         
-            
-        cell_head.Capacity = ncells;
-        cell_neighbours.Capacity = ncells*nneighbours;
+        
+        cell_head.Clear();
+        for( var i=0; i<ncells; i++ ) cell_head.Add( -1 );
+
+        cell_neighbours.Clear();
+        for( var i=0; i<ncells*nneighbours; i++ ) cell_neighbours.Add( -1 );
 
         for( var cellz=0; cellz<ncellz; cellz++ )
         {

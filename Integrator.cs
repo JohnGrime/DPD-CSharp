@@ -6,7 +6,7 @@ namespace DPD
 
 public class Integrator
 {
-    static public void VelocityVerlet( ref DPDSim sim )
+    static public void VelocityVerlet( DPDSim sim )
     {
         var N_sites = sim.site_ids.Count;
 
@@ -58,11 +58,11 @@ public class Integrator
         // Get new forces for these positions and temp velocities
         // Note: DoNonbonded() is the slow method; DoNonbonded2() is the neighbour cell version.
         //
-        if( sim.i_am_dumb == 1 ) Forces.DoNonbonded( ref sim );
-        else Forces.DoNonbonded2( ref sim );
+        if( sim.i_am_dumb == 1 ) Forces.DoNonbonded( sim );
+        else Forces.DoNonbonded2( sim );
 
-        Forces.DoBonds( ref sim );
-        Forces.DoAngles( ref sim );
+        Forces.DoBonds( sim );
+        Forces.DoAngles( sim );
         
         //
         // At this point we have:
