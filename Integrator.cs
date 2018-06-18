@@ -8,7 +8,7 @@ public class Integrator
 {
     static public void VelocityVerlet( DPDSim sim )
     {
-        var N_sites = sim.site_ids.Count;
+        var N_sites = sim.site_ids.Length;
 
         double dt = sim.delta_t;
         double h_dt_sq = 0.5*(dt*dt);

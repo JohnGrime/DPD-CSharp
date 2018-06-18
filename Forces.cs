@@ -18,7 +18,7 @@ public class Forces
         double dx_hat, dy_hat, dz_hat;
         double fx, fy, fz;
             
-        var N_bonds = sim.bond_site_indices.Count / 2;
+        var N_bonds = sim.bond_site_indices.Length / 2;
         for( var bond_i=0; bond_i<N_bonds; bond_i++ )
         {
             var i = sim.bond_site_indices[ (bond_i*2)+0 ];
@@ -90,7 +90,7 @@ public class Forces
     public static void DoAngles( DPDSim sim )
     {
         const double theta_tol = 0.000001;
-        var N_angles = sim.angle_site_indices.Count / 3;
+        var N_angles = sim.angle_site_indices.Length / 3;
 
         double dx_ij, dy_ij, dz_ij;
         double dx_jk, dy_jk, dz_jk;
@@ -294,7 +294,7 @@ public class Forces
     //
     public static void DoNonbonded( DPDSim sim )
     {
-        var N = sim.site_ids.Count;
+        var N = sim.site_ids.Length;
         double cutsq = sim.rcut * sim.rcut;   // precalculate
         double sqrt_dt = Math.Sqrt( sim.delta_t ); // precalculate
         
@@ -314,7 +314,7 @@ public class Forces
     //
     public static void DoNonbonded2( DPDSim sim )
     {
-        var N = sim.site_ids.Count;
+        var N = sim.site_ids.Length;
 
         double cutsq = sim.rcut * sim.rcut;
         double sqrt_dt = Math.Sqrt( sim.delta_t );
@@ -333,17 +333,17 @@ public class Forces
         //
         //SetupCells( sim );
 
-        if( sim.cell_head.Count != ncells )
+        if( sim.cell_head.Length != ncells )
         {
-            DPDError( "sim.cell_head.Count ({0}) != ncells ({1}); did you call SetupCells()?",
-                sim.cell_head.Count, ncells );
+            DPDError( "sim.cell_head.Length ({0}) != ncells ({1}); did you call SetupCells()?",
+                sim.cell_head.Length, ncells );
         }
 
         // reset head indices.
-        for( var i=0; i<sim.cell_head.Count; i++ ) sim.cell_head[i] = -1;
+        for( var i=0; i<sim.cell_head.Length; i++ ) sim.cell_head[i] = -1;
 
         // assign sites to cells, and update head lists etc.
-        sim.cell_next.Clear();
+        if( sim.cell_next.Length != N ) Array.Resize( ref sim.cell_next, N );
         for( var i=0; i<N; i++ )
         {
             var j = i*3;
@@ -353,7 +353,7 @@ public class Forces
 
             // update linked lists.
             var cell_no = cellx + (celly*ncellx) + (cellz*ncelly*ncellx);
-            sim.cell_next.Add( sim.cell_head[cell_no] );
+            sim.cell_next[i] = sim.cell_head[cell_no];
             sim.cell_head[cell_no] = i;
         }
 

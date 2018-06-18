@@ -79,31 +79,31 @@ public class DPDSim
     //
     // Per-particle information
     //
-    public List<int> site_ids = new List<int>();
-    public List<double> r = new List<double>();
-    public List<double> v = new List<double>();
-    public List<double> f = new List<double>();
+    public int[] site_ids = new int[1];
+    public double[] r = new double[1];
+    public double[] v = new double[1];
+    public double[] f = new double[1];
 
     //
     // Nonbonded interaction information
     //
     public double rcut, ninteractions;
-    public List<double> interactions = new List<double>();
-    public List<int> exclude = new List<int>();
+    public double[] interactions = new double[1];
+    public double[] exclude = new double[1];
 
     //
     // Bond interaction information
     //
-    public List<int> bond_site_indices = new List<int>();
-    public List<double> bond_eq = new List<double>();
-    public List<double> bond_k = new List<double>();
+    public int[] bond_site_indices = new int[1];
+    public double[] bond_eq = new double[1];
+    public double[] bond_k  = new double[1];
     
     //
     // Angle interaction information
     //
-    public List<int> angle_site_indices = new List<int>();
-    public List<double> angle_eq = new List<double>();
-    public List<double> angle_k = new List<double>();
+    public int[] angle_site_indices = new int[1];
+    public double[] angle_eq = new double[1];
+    public double[] angle_k  = new double[1];
 
     //
     // Virial-related information
@@ -126,11 +126,11 @@ public class DPDSim
     //
     // Misc
     //
-    public List<double> v_ = new List<double>();
-    public List<double> f_ = new List<double>();
-    public List<int> cell_next = new List<int>();
-    public List<int> cell_head = new List<int>();
-    public List<int> cell_neighbours = new List<int>();
+    public double[] v_ = new double[1];
+    public double[] f_ = new double[1];
+    public int[] cell_next = new int[1];
+    public int[] cell_head = new int[1];
+    public int[] cell_neighbours = new int[1];
     public long ran1_value;
     public int i_am_dumb;
 
@@ -144,24 +144,24 @@ public class DPDSim
         site_types.Clear();
         molecule_types.Clear();
 
-        site_ids.Clear();
-        r.Clear();
-        v.Clear();
-        f.Clear();
+        Array.Resize( ref site_ids, 0 );
+        Array.Resize( ref r, 0 );
+        Array.Resize( ref v, 0 );
+        Array.Resize( ref f, 0 );
 
-        v_.Clear();
-        f_.Clear();
+        Array.Resize( ref v_, 0 );
+        Array.Resize( ref f_, 0 );
 
-        interactions.Clear();
-        exclude.Clear();
+        Array.Resize( ref interactions, 0 );
+        Array.Resize( ref exclude, 0 );
 
-        bond_site_indices.Clear();
-        bond_eq.Clear();
-        bond_k.Clear();
+        Array.Resize( ref bond_site_indices, 0 );
+        Array.Resize( ref bond_eq, 0 );
+        Array.Resize( ref bond_k, 0 );
 
-        angle_site_indices.Clear();
-        angle_eq.Clear();
-        angle_k.Clear();
+        Array.Resize( ref angle_site_indices, 0 );
+        Array.Resize( ref angle_eq, 0 );
+        Array.Resize( ref angle_k, 0 );
 
         for( var i=0; i<3; i++ ) cell[i] = 10.0;
         for( var i=0; i<9; i++ ) pressure[i] = 0.0;
@@ -206,7 +206,7 @@ public class DPDSim
         // v = sqrt( 3kBT / m )
 
         double factor = Math.Sqrt( 3.0*target_kBT ) / 3.0; // divide evenly across degs of freedom for v components
-        for( var i=0; i<site_ids.Count; i++ )
+        for( var i=0; i<site_ids.Length; i++ )
         {
             var j = i*3;
 
@@ -221,7 +221,7 @@ public class DPDSim
     //
     public void ZeroMomentum()
     {
-        var N_sites = site_ids.Count;
+        var N_sites = site_ids.Length;
         var net_m = new double[3];
 
         net_m[0] = 0.0;
@@ -264,11 +264,8 @@ public class DPDSim
         
         if( ncellx < 3 || ncelly < 3 || ncellz < 3 ) DPDError( "A cell dimension has fewer than 3 cells; this is a linked list cell error." );         
         
-        cell_head.Clear();
-        for( var i=0; i<ncells; i++ ) cell_head.Add( -1 );
-
-        cell_neighbours.Clear();
-        for( var i=0; i<ncells*nneighbours; i++ ) cell_neighbours.Add( -1 );
+        Array.Resize( ref cell_head, ncells );
+        Array.Resize( ref cell_neighbours, ncells*nneighbours );
 
         for( var cellz=0; cellz<ncellz; cellz++ )
         {

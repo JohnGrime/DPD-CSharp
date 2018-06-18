@@ -13,56 +13,73 @@ public class DPDIO
 public static void LoadSim( StreamReader f, DPDSim sim )
 {
     parse_dpd_sim( f, sim );
-    
-    sim.bond_site_indices.Clear();
-    sim.bond_eq.Clear();
-    sim.bond_k.Clear();
 
-    sim.angle_site_indices.Clear();
-    sim.angle_eq.Clear();
-    sim.angle_k.Clear();
+    //
+    // How many bonds and angles do we need?
+    //
+    int N_bonds = 0;
+    int N_angles = 0;
+    foreach( var mol in sim.molecule_types )
+    {
+        N_bonds += mol.count * mol.bond_k.Count;
+        N_angles += mol.count * mol.angle_k.Count;
+    }
+    
+    Array.Resize( ref sim.bond_site_indices, N_bonds*2 );
+    Array.Resize( ref sim.bond_eq, N_bonds );
+    Array.Resize( ref sim.bond_k, N_bonds );
+
+    Array.Resize( ref sim.angle_site_indices, N_angles*3 );
+    Array.Resize( ref sim.angle_eq, N_angles );
+    Array.Resize( ref sim.angle_k, N_angles );
 
     //
     // Populate system bond and angle arrays using molecule definitions and counts
     //
+    int sys_bond_upto = 0;
+    int sys_angle_upto = 0;
     int offset = 0; // start index into system sites for the current molecule
-    for( var mol_type = 0; mol_type < sim.molecule_types.Count; mol_type++ )
+    foreach( var mol in sim.molecule_types )
     {
-        for( var mol_inst = 0; mol_inst < sim.molecule_types[mol_type].count; mol_inst++ )
+        for( var mol_inst = 0; mol_inst < mol.count; mol_inst++ )
         {
-            var N = sim.molecule_types[mol_type].bond_k.Count;
+            var N = mol.bond_k.Count;
             for( var bi = 0; bi < N; bi++ )
             {
-                var i = offset + sim.molecule_types[mol_type].bond_site_indices[ (bi*2)+0 ];
-                var j = offset + sim.molecule_types[mol_type].bond_site_indices[ (bi*2)+1 ];
+                var i = offset + mol.bond_site_indices[ (bi*2)+0 ];
+                var j = offset + mol.bond_site_indices[ (bi*2)+1 ];
 
-                var b_eq = sim.molecule_types[mol_type].bond_eq[bi];
-                var b_k = sim.molecule_types[mol_type].bond_k[bi];
+                var b_eq = mol.bond_eq[bi];
+                var b_k  = mol.bond_k[bi];
 
-                sim.bond_site_indices.Add( i-1 ); // -1 : unit based index -> zero based index
-                sim.bond_site_indices.Add( j-1 );
-                sim.bond_eq.Add( b_eq );
-                sim.bond_k.Add( b_k );
+                sim.bond_site_indices[sys_bond_upto*2 +0] = i-1; // -1 : unit based index -> zero based index
+                sim.bond_site_indices[sys_bond_upto*2 +1] = j-1;
+                sim.bond_eq[sys_bond_upto] = b_eq;
+                sim.bond_k[sys_bond_upto] = b_k;
+
+                sys_bond_upto++;
             }
 
-            N = sim.molecule_types[mol_type].angle_k.Count;
+            N = mol.angle_k.Count;
             for( var ai = 0; ai < N; ai++ )
             {
-                int i = offset + sim.molecule_types[mol_type].angle_site_indices[ (ai*3)+0 ];
-                int j = offset + sim.molecule_types[mol_type].angle_site_indices[ (ai*3)+1 ];
-                int k = offset + sim.molecule_types[mol_type].angle_site_indices[ (ai*3)+2 ];
+                var i = offset + mol.angle_site_indices[ (ai*3)+0 ];
+                var j = offset + mol.angle_site_indices[ (ai*3)+1 ];
+                var k = offset + mol.angle_site_indices[ (ai*3)+2 ];
 
-                var a_eq = sim.molecule_types[mol_type].angle_eq[ai];
-                var a_k = sim.molecule_types[mol_type].angle_k[ai];
+                var a_eq = mol.angle_eq[ai];
+                var a_k  = mol.angle_k[ai];
 
-                sim.angle_site_indices.Add( i-1 ); // -1 : unit based index -> zero based index
-                sim.angle_site_indices.Add( j-1 );
-                sim.angle_site_indices.Add( k-1 );
-                sim.angle_eq.Add( a_eq );
-                sim.angle_k.Add( a_k );
+                sim.angle_site_indices[sys_angle_upto*3 +0] = i-1; // -1 : unit based index -> zero based index
+                sim.angle_site_indices[sys_angle_upto*3 +1] = j-1;
+                sim.angle_site_indices[sys_angle_upto*3 +2] = k-1;
+                sim.angle_eq[sys_angle_upto] = a_eq;
+                sim.angle_k[sys_angle_upto] = a_k;
+
+                sys_angle_upto++;
             }
 
-            offset += sim.molecule_types[mol_type].site_internal_ids.Count; // update current site offset for bond indices.
+            offset += mol.site_internal_ids.Count; // update current site offset for bond indices.
         }
     }
 
@@ -72,9 +89,9 @@ public static void LoadSim( StreamReader f, DPDSim sim )
     // Only bonds used here; trivial to use angles too, but not needed for DPD.
     //
     var MaxExclusions = DPDSim.MaxExclusionEntries;
-    sim.exclude.Clear();
-    for( var i=0; i<sim.site_ids.Count*MaxExclusions; i++ ) sim.exclude.Add( -1 );
-    for( var bi=0; bi<sim.bond_k.Count; bi++ )
+    Array.Resize( ref sim.exclude, sim.site_ids.Length*MaxExclusions );
+    for( var i=0; i<sim.exclude.Length; i++ ) sim.exclude[i] = -1;
+    for( var bi=0; bi<sim.bond_k.Length; bi++ )
     {
         var i = sim.bond_site_indices[(bi*2)+0];
         var j = sim.bond_site_indices[(bi*2)+1];
@@ -108,7 +125,7 @@ public static void LoadSim( StreamReader f, DPDSim sim )
     // Wrap particle positions that have crossed a periodic boundary
     //
     {
-        for( var i=0; i<sim.site_ids.Count; i++ )
+        for( var i=0; i<sim.site_ids.Length; i++ )
         {
             var j = i*3;
             var x = sim.r[j+0];
@@ -133,7 +150,7 @@ public static void LoadSim( StreamReader f, DPDSim sim )
     sim.fric = (sim.sigma*sim.sigma) / (2.0*sim.target_kBT);
     Console.WriteLine( "Friction coefficient is {0} ( as sigma = {1} )", sim.fric, sim.sigma );
         
-    Console.WriteLine( "Bead density is {0} per cubic Rc", ((double)sim.site_ids.Count) / (sim.cell[0]*sim.cell[1]*sim.cell[2]) );
+    Console.WriteLine( "Bead density is {0} per cubic Rc", ((double)sim.site_ids.Length) / (sim.cell[0]*sim.cell[1]*sim.cell[2]) );
     
     // boot ran1() with the seed provided
     Ran1.ran1( ref sim.ran1_value );
@@ -203,7 +220,7 @@ public static void SaveSim( StreamWriter f, DPDSim sim )
     // Coords
     //
     f.WriteLine( "coords" );
-    for( var i=0; i<sim.site_ids.Count; i++ )
+    for( var i=0; i<sim.site_ids.Length; i++ )
     {
         var site_id = sim.site_ids[i];
         f.WriteLine( "\t{0}", sim.site_types[site_id].name );
@@ -222,7 +239,7 @@ public static void SaveTrajectoryFrame( StreamWriter f, DPDSim sim )
     f.WriteLine( "{0}", sim.step_no );
 
     f.WriteLine( "ITEM: NUMBER OF ATOMS" );
-    f.WriteLine( "{0}", sim.site_ids.Count );
+    f.WriteLine( "{0}", sim.site_ids.Length );
 
     f.WriteLine( "ITEM: BOX BOUNDS pp pp pp" );
     f.WriteLine( "{0:G} {1:G}", -sim.cell[0]/2, +sim.cell[0]/2 );
@@ -230,7 +247,7 @@ public static void SaveTrajectoryFrame( StreamWriter f, DPDSim sim )
     f.WriteLine( "{0:G} {1:G}", -sim.cell[2]/2, +sim.cell[2]/2 );
 
     f.WriteLine( "ITEM: ATOMS id type x y z" );
-    for( var i=0; i<sim.site_ids.Count; i++ )
+    for( var i=0; i<sim.site_ids.Length; i++ )
     {
         f.WriteLine( "{0} {1} {2:G} {3:G} {4:G}",
             i+1, sim.site_ids[i]+1, sim.r[(i*3)+0], sim.r[(i*3)+1], sim.r[(i*3)+2] );
@@ -242,9 +259,9 @@ public static void PrintSimInfo( DPDSim sim, double cpu_time )
     var com = new double[3];
     var mom = new double[3];
 
-    var N_sites = sim.site_ids.Count;
-    var N_bonds = sim.bond_site_indices.Count;
-    var N_angles = sim.angle_site_indices.Count;
+    var N_sites = sim.site_ids.Length;
+    var N_bonds = sim.bond_site_indices.Length;
+    var N_angles = sim.angle_site_indices.Length;
     
     //print some info
     com[0] = com[1] = com[2] = 0.0;
@@ -469,7 +486,7 @@ private static void parse_dpd_sim( StreamReader f, DPDSim sim )
         // if in coords section...
         else if( parse_state == ParseState.Coords )
         {
-            if( site_upto > sim.site_ids.Count )
+            if( site_upto > sim.site_ids.Length )
             {
                 DPDError( "Error on line {0}; this site should not exist", line_no );
             }
@@ -527,8 +544,8 @@ private static void parse_dpd_sim( StreamReader f, DPDSim sim )
                     DPDError( "Error on line {0}; attempting to define interactions without sites having been specified.", line_no );
                 }
 
-                sim.interactions.Clear();
-                for( var i=0; i<N_site_types*N_site_types; i++ ) sim.interactions.Add( 0.0 );
+                Array.Resize( ref sim.interactions, N_site_types*N_site_types );
+                for( var i=0; i<sim.interactions.Length; i++ ) sim.interactions[i] = 0.0;
                 
                 parse_state = ParseState.Interactions;
             }
@@ -541,28 +558,15 @@ private static void parse_dpd_sim( StreamReader f, DPDSim sim )
                     Console.WriteLine( "{0} {1} {2}", mt.name, mt.count, mt.site_internal_ids.Count );
                     N_sites += (mt.site_internal_ids.Count * mt.count);   
                 }
+
+                Array.Resize( ref sim.site_ids, N_sites );
+
+                Array.Resize( ref sim.r, N_sites*3 );
+                Array.Resize( ref sim.v, N_sites*3 );
+                Array.Resize( ref sim.f, N_sites*3 );
                 
-                sim.site_ids.Clear();
-                for( var i=0; i<N_sites; i++ )
-                {
-                    sim.site_ids.Add( -1 );
-                }
-                Console.WriteLine( "** {0}", sim.site_ids.Count );
-
-                sim.r.Clear();
-                sim.v.Clear();
-                sim.f.Clear();
-                sim.v_.Clear();
-                sim.f_.Clear();
-                for( var i=0; i<N_sites*3; i++ )
-                {
-                    sim.r.Add( 0 );
-                    sim.v.Add( 0 );
-                    sim.f.Add( 0 );
-
-                    sim.v_.Add( 0 );
-                    sim.f_.Add( 0 );
-                }
+                Array.Resize( ref sim.v_, N_sites*3 );
+                Array.Resize( ref sim.f_, N_sites*3 );
 
                 parse_state = ParseState.Coords;
             }
@@ -580,11 +584,11 @@ private static void parse_dpd_sim( StreamReader f, DPDSim sim )
     if( sim.cell[0]/2.0 < sim.rcut || sim.cell[1]/2.0 < sim.rcut || sim.cell[2]/2.0 < sim.rcut ) DPDError( "A cell dimension divided by two is smaller than rcut" );
     if( sim.site_types.Count == 0 ) DPDError( "No sites defined in file" );
     if( sim.molecule_types.Count == 0 ) DPDError( "No molecules defined in file" );
-    if( sim.interactions.Count == 0 ) DPDError( "No interactions defined in file" );
-    if( sim.site_ids.Count == 0 ) DPDError( "No site coordinates defined in file" );
-    if( site_upto != sim.site_ids.Count )
+    if( sim.interactions.Length == 0 ) DPDError( "No interactions defined in file" );
+    if( sim.site_ids.Length == 0 ) DPDError( "No site coordinates defined in file" );
+    if( site_upto != sim.site_ids.Length )
     {
-        DPDError( "Error in number of sites found; got {0}, wanted {1}\n", site_upto, sim.site_ids.Count );
+        DPDError( "Error in number of sites found; got {0}, wanted {1}\n", site_upto, sim.site_ids.Length );
     }
 
     //
@@ -697,8 +701,8 @@ private static void parse_dpd_sim( StreamReader f, DPDSim sim )
         }
     }
 
-    Console.WriteLine( "Sites ({0}):", sim.site_ids.Count );
-    if( sim.site_ids.Count > 10 )
+    Console.WriteLine( "Sites ({0}):", sim.site_ids.Length );
+    if( sim.site_ids.Length > 10 )
     {
         Console.WriteLine( "\t( printing truncated to first 10 sites )\n" );
         for( var i=0; i<10; i++ )
@@ -709,7 +713,7 @@ private static void parse_dpd_sim( StreamReader f, DPDSim sim )
     }
     else
     {
-        for( var i=0; i<sim.site_ids.Count; i++ )
+        for( var i=0; i<sim.site_ids.Length; i++ )
         {
             Console.WriteLine( "\t{0} (internal {1}), position = {2:F3}, {2:F3}, {2:F3}",
                 sim.site_types[ sim.site_ids[i] ].name, sim.site_ids[i], sim.r[i*3], sim.r[(i*3)+1], sim.r[(i*3)+2] );
