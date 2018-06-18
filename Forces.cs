@@ -309,7 +309,7 @@ public class Forces
     // This is the naive loop over pairs in the system. Simple, but
     // *extremely* inefficient as number of particles or particle density increases.
     //
-    public static void DoNonbonded( DPDSim sim )
+    public static void DoNonbondedSlow( DPDSim sim )
     {
         var N = sim.site_ids.Length;
         double cutsq = sim.rcut * sim.rcut;
@@ -329,7 +329,7 @@ public class Forces
     // For more info on the linked list cell algorithm see Allen & Tildesley, Computer Simulation of Liquids.
     // Assumes periodic wrap applied before this routine is called.
     //
-    public static void DoNonbonded2( DPDSim sim )
+    public static void DoNonbondedFast( DPDSim sim )
     {
         var N = sim.site_ids.Length;
 

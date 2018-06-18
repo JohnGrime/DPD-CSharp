@@ -66,8 +66,8 @@ class Program
         {
             sim.ClearEnergyAndPressure();
 
-            if( sim.i_am_dumb == 1 ) Forces.DoNonbonded( sim );
-            else Forces.DoNonbonded2( sim );
+            if( sim.i_am_dumb == 1 ) Forces.DoNonbondedSlow( sim );
+            else Forces.DoNonbondedFast( sim );
 
             Forces.DoBonds( sim );
             Forces.DoAngles( sim );
@@ -104,7 +104,7 @@ class Program
         Console.WriteLine( "" );
         Console.WriteLine( "Final information:" );
         Console.WriteLine( "" );
-        
+
         var elapsed = DateTime.Now - time_start;
         DPDIO.PrintSimInfo( sim, elapsed.TotalSeconds );
         save_checkpoint_and_trajectory( sim );
