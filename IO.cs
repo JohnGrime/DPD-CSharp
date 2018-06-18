@@ -565,7 +565,6 @@ private static void parse_dpd_sim( StreamReader f, DPDSim sim )
                 var N_sites = 0;
                 foreach( var mt in sim.molecule_types )
                 {
-                    Console.WriteLine( "{0} {1} {2}", mt.name, mt.count, mt.site_internal_ids.Count );
                     N_sites += (mt.site_internal_ids.Count * mt.count);   
                 }
 
