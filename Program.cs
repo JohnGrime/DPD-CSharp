@@ -92,8 +92,7 @@ class Program
             }
             if( sim.step_no % sim.print_every == 0 )
             {
-                var elapsed = DateTime.Now - time_start;
-                DPDIO.PrintSimInfo( sim, elapsed.TotalSeconds );
+                DPDIO.PrintSimInfo( sim, (DateTime.Now-time_start).TotalSeconds );
             }       
         }
 
@@ -105,8 +104,7 @@ class Program
         Console.WriteLine( "Final information:" );
         Console.WriteLine( "" );
 
-        var elapsed = DateTime.Now - time_start;
-        DPDIO.PrintSimInfo( sim, elapsed.TotalSeconds );
+        DPDIO.PrintSimInfo( sim, (DateTime.Now-time_start).TotalSeconds );
         save_checkpoint_and_trajectory( sim );
     }
 }
