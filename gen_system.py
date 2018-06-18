@@ -284,7 +284,7 @@ def PrintPDBMoleculeBonds( f, offset, bond_sets ):
 	  f (file): destination for output
 	  bonds (list of [i,j,eq,K]) : bonds in the molecule
 	"""
-	fmt = 'CONECT%5d%5d'
+	fmt = '%5d%5d'
 
 	all_bonds = []
 	for bond_set in bond_sets:
@@ -294,9 +294,23 @@ def PrintPDBMoleculeBonds( f, offset, bond_sets ):
 			bj = max( (offset+i)-1, (offset+j)-1 )
 			all_bonds.append( [bi,bj] )
 
-	for b in sorted( all_bonds ):
-		print >>f, fmt % ( b[0], b[1] )
+	sorted_bonds = sorted( all_bonds )
+	base = None
+	output = None
+	counter = 0
+	for bi in range( 0, len(sorted_bonds) ):
+		b = sorted_bonds[bi]
+		counter += 1
 
+		if( (base!=b[0]) or (counter>4) ):
+			if output != None: print >>f, output
+			base = b[0]
+			counter = 0
+			output = 'CONECT%5d' % ( base )
+
+		output += '%5d' % ( b[1] )
+
+	print >>f, output
 
 #
 # Main script starts here.
