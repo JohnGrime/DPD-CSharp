@@ -1,6 +1,18 @@
 import sys, math, random
 
 def GenLipid( head_sites, tail_sites, N_tails ):
+	"""
+	Generate an example lipid (site names, bonds, angles) given a
+	list of head names and tail names, and the number of tails (1 or 2)
+
+	Args:
+	  head_sites (list of strings): site names for the head region
+	  tail_sites (list of strings): site names for the tail region
+	  N_tails (int) : 1 or 2, specify single- or dual-tail lipid
+
+	Returns:
+		3-tuple of (sites,bonds,angles), each tuple element is a list
+	"""
 
 	b_eq, b_K = 0.7, 100.0
 	a_eq, a_K = 3.142, 20.0
@@ -106,8 +118,14 @@ def GenLipid( head_sites, tail_sites, N_tails ):
 
 	return all_sites, all_bonds, all_angles
 
-
 def PrintSettings( f, settings ):
+	"""
+	Prints a DPD-style 'settings' section to file.
+
+	Args:
+	  f (file): destination for output
+	  settings (dictionary: string->string) : settings dictionary
+	"""
 	print >>f, 'settings'
 	for key in settings:
 		if key == 'cell':
@@ -118,12 +136,27 @@ def PrintSettings( f, settings ):
 	print >>f, 'end'
 
 def PrintSites( f, site_names ):
+	"""
+	Prints a DPD-style 'sites' section to file.
+
+	Args:
+	  f (file): destination for output
+	  site_names (list of strings) : list of site names
+	"""
 	print >>f, 'sites'
 	for name in site_names:
 		print >>f, '\t', name
 	print >>f, 'end'
 
 def PrintInteractions( f, interactions ):
+	"""
+	Prints a DPD-style 'intractions' section to file.
+
+	Args:
+	  f (file): destination for output
+	  interactions (2d list of float) : indexed by site type; interactions[i][j] == pair coefficient for i,j
+	"""
+
 	print >>f, 'interactions'
 	for a in interactions:
 		for b in interactions[a]:
@@ -131,6 +164,16 @@ def PrintInteractions( f, interactions ):
 	print >>f, 'end'
 
 def PrintMolecule( f, name, count, sites, bonds, angles ):
+	"""
+	Prints a DPD-style 'molecule' section to file.
+
+	Args:
+	  f (file): destination for output
+	  count (int) : number of instances of this molecule type
+	  sites (list of strings) : member site names for the molecule
+	  bonds (list of [i,j,eq,K]) : bonds in the molecule
+	  angles (list of [i,j,k,eq,K]) : angles in the molecule
+	"""
 
 	bnd_fmt = '\t bond  %5d %5d %.3f %.3f'
 	ang_fmt = '\t angle %5d %5d %5d %.3f %.3f'
@@ -160,12 +203,108 @@ def PrintMolecule( f, name, count, sites, bonds, angles ):
 	print >>f, 'end'
 
 def PrintCoords( f, coords ):
+	"""
+	Prints a DPD-style 'coords' section to file.
+
+	Args:
+	  f (file): destination for output
+	  coords (list of [name,x,y,z] entries ) : coordinate data to write
+	"""
 	fmt = "\t %s %f %f %f"
 	print >>f, 'coords'
 	for c in coords:
 		name, x, y, z = c
 		print >>f, fmt % ( name, x, y, z )
 	print >>f, 'end'
+
+def MakePDBAtomLine( serial, name, resName, chainID, resSeq, x, y, z ):
+	"""
+	Generates a line of text suitable for writing to a PDB file from a PDB atom dictionary.
+
+	Args:
+	  atom (dictionary): A PDB atom dictionary
+
+	Returns:
+	  A string suitable for writing as an ATOM or HETATM line in a PDB file.
+	"""
+	PDB_atom_line_format = '%-6.6s%5.5s %4.4s%1.1s%3.3s %1.1s%4d%1.1s   %8.2f%8.2f%8.2f%6.6s%6.6s          %2.2s%2.2s'
+
+	string = PDB_atom_line_format % (
+		'ATOM',
+		str(serial),
+		name,
+		'',
+		resName,
+		chainID,
+		resSeq,
+		'',
+		x, y, z,
+		'', '',
+		'', '' )
+	
+	return string
+
+def PrintPDBMolecule( f, atom_upto, mol_upto, resName, atom_sets, coords ):
+	"""
+	Prints a PDB 'molecule' to file, where each set of atoms in the structure is
+	assigned a different chainID.
+
+	Args:
+	  f (file): destination for output
+	  atom_upto (int) : serial number of first atom in the molecule
+	  mol_upto (int) : current molecule number
+	  resName (string) : resName to use in output as 'name' of molecule
+	  atom_sets (list of string lists) : each set is considered a different chain
+	  coords (list of [name,x,y,z] entries ) : coordinate data, indexed using atom_upto + offset
+
+	Returns:
+	  Updated atom_upto and mol_upto values after writing the molecule data to file
+	"""
+	chains = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+	for si in range( 0, len(atom_sets) ):
+		for ai in range( 0, len(atom_sets[si]) ):
+			serial = atom_upto+ai
+			name = atom_sets[si][ai]
+			chainID = chains[si]
+			resSeq = mol_upto
+			x,y,z = coords[(atom_upto+ai)-1][1:4] # -1 as converting unit based to zero-based indices
+			line = MakePDBAtomLine( serial, name, resName, chainID, resSeq, x, y, z )
+			print >>f, line
+		atom_upto += len(atom_sets[si])
+	mol_upto += 1
+	print >>f, 'TER'
+
+	return atom_upto, mol_upto
+
+def PrintPDBMoleculeBonds( f, offset, bond_sets ):
+	"""
+	Prints the CONECT entries for a PDB 'molecule' to file.
+
+	Args:
+	  f (file): destination for output
+	  bonds (list of [i,j,eq,K]) : bonds in the molecule
+	"""
+	fmt = 'CONECT%5d%5d'
+
+	all_bonds = []
+	for bond_set in bond_sets:
+		for b in bond_set:
+			i,j,eq,k = b
+			bi = min( (offset+i)-1, (offset+j)-1 )
+			bj = max( (offset+i)-1, (offset+j)-1 )
+			all_bonds.append( [bi,bj] )
+
+	for b in sorted( all_bonds ):
+		print >>f, fmt % ( b[0], b[1] )
+
+
+#
+# Main script starts here.
+#
+
+#
+# Set up default system information
+#
 
 settings = {
 	'step_no': 1,
@@ -179,10 +318,6 @@ settings = {
 	'kBT': 1.0,
 	'cell': [10,10,10]
 }
-
-#
-# Set up defaults
-#
 
 site_names = [ "w", "h", "t" ]
 
@@ -199,7 +334,7 @@ rho = 3.0 # target site density
 phi = 0.3 # mass fraction of system that is lipid
 head_len, tail_len, N_tails = 3, 5, 2
 
-# After Venturoli et al
+# Interaction weights after Venturoli et al
 
 interactions['w']['w'] = 25.0
 interactions['w']['h'] = 15.0
@@ -211,7 +346,7 @@ interactions['h']['t'] = 80.0
 interactions['t']['t'] = 25.0
 
 #
-# Get user params
+# Get user params from command line, and basic sanity check
 #
 
 if len(sys.argv) < 5:
@@ -240,7 +375,7 @@ if( (phi<0.0) or (phi>=1.0) ):
 settings['cell'] = [Lx,Ly,Lz]
 
 #
-# Calculate system & write
+# Generate DPD system & write inut file
 #
 
 Lx, Ly, Lz = settings["cell"]
@@ -297,3 +432,26 @@ PrintMolecule( f, "water", N_sites_total-(N_lipid_molecules*lipid_length), ['w']
 print >>f, ''
 PrintCoords( f, coords )
 print >>f, ''
+
+#
+# Write PDB file for more straightforward visualization
+#
+
+f = open( 'system.pdb', 'w' )
+
+atom_upto = 1
+mol_upto = 1
+
+for mi in range( 0, N_lipid_molecules ):
+	atom_upto, mol_upto = PrintPDBMolecule( f, atom_upto, mol_upto, 'LPD', lipid_sites, coords )
+
+for mi in range( 0, N_water_molecules ):
+	atom_upto, mol_upto = PrintPDBMolecule( f, atom_upto, mol_upto, 'SOL', [ ['w'] ], coords )
+
+atom_upto = 1
+
+for mi in range( 0, N_lipid_molecules ):
+	PrintPDBMoleculeBonds( f, atom_upto, lipid_bonds )
+	atom_upto += lipid_length
+
+f.close()
