@@ -85,7 +85,7 @@ public static void LoadSim( StreamReader f, DPDSim sim )
 
     //
     // Nonbonded exclusion lists; used in nonbonded force calculations.
-    // MAX_EXCLUSION_ENTRY suggested to be 4. If a lower value is posible, use it!
+    // MaxExclusionEntries suggested to be 4. If a lower value is posible, use it!
     // Only bonds used here; trivial to use angles too, but not needed for DPD.
     //
     var MaxExclusions = DPDSim.MaxExclusionEntries;
@@ -109,7 +109,7 @@ public static void LoadSim( StreamReader f, DPDSim sim )
         sim.exclude[ (j*MaxExclusions)+l ] = i;
     }
 
-    sim.ZeroMomentum();
+    sim.ZeroNetMomentum();
 
     //
     // Check whether the input file specified that the velocities should be initialised by the system...
@@ -144,18 +144,19 @@ public static void LoadSim( StreamReader f, DPDSim sim )
     sim.SetupCells();
     
     //
-    // calculate friction_coefficient from sigma
-    // sig^2 = 2*fric*kBT
+    // Calculate friction_coefficient from sigma; sigma^2 = 2*fric*kBT
     //
     sim.fric = (sim.sigma*sim.sigma) / (2.0*sim.target_kBT);
-    Console.WriteLine( "Friction coefficient is {0} ( as sigma = {1} )", sim.fric, sim.sigma );
-        
-    Console.WriteLine( "Bead density is {0} per cubic Rc", ((double)sim.site_ids.Length) / (sim.cell[0]*sim.cell[1]*sim.cell[2]) );
     
-    // boot ran1() with the seed provided
+    //
+    // Initialize ran1() with the seed provided
+    //
     Ran1.ran1( ref sim.ran1_value );
 }
 
+//
+// Save a DPD sim file, suitable for loading in as a restart point.
+//
 public static void SaveSim( StreamWriter f, DPDSim sim )
 {
     var N_site_types = sim.site_types.Count;
@@ -233,6 +234,9 @@ public static void SaveSim( StreamWriter f, DPDSim sim )
     f.WriteLine( "" );
 }
 
+//
+// Save trajectory snapshot in LAMMPS file format, for easy visualization with e.g. VMD.
+//
 public static void SaveTrajectoryFrame( StreamWriter f, DPDSim sim )
 {
     f.WriteLine( "ITEM: TIMESTEP" );
@@ -254,6 +258,9 @@ public static void SaveTrajectoryFrame( StreamWriter f, DPDSim sim )
     }
 }
 
+//
+// Print some useful information to the console
+//
 public static void PrintSimInfo( DPDSim sim, double cpu_time )
 {
     var com = new double[3];
@@ -340,8 +347,10 @@ private static int get_site_type_from_name( string name, DPDSim sim )
     return -1;
 }
 
+//
+// Here be dragons. Don't modify unless you known what you're doing!
+//
 private enum ParseState { None, Settings, Sites, Molecule, Interactions, Coords };
-
 private static void parse_dpd_sim( StreamReader f, DPDSim sim )
 {
     var delim = new char[] { ' ', ',', '\t' };
@@ -379,7 +388,7 @@ private static void parse_dpd_sim( StreamReader f, DPDSim sim )
 
             parse_state = ParseState.None;
         }
-        // else if in settings section...
+        // if parsing the system settings ...
         else if( parse_state == ParseState.Settings )
         {
             var key = tokens[0];
@@ -406,7 +415,7 @@ private static void parse_dpd_sim( StreamReader f, DPDSim sim )
                 Console.WriteLine( "Unknown entry {0} found on line {1} in settings; ignoring.", key, line_no );
             }
         }
-        // if in site section...
+        // if parsing the site declarations ...
         else if( parse_state == ParseState.Sites )
         {
             site.name = tokens[0];
@@ -414,6 +423,7 @@ private static void parse_dpd_sim( StreamReader f, DPDSim sim )
             sim.site_types.Add( site );
             site = new DPDSiteType();
         }
+        // if parsing the nonbonded interaction parameters ...
         else if( parse_state == ParseState.Interactions )
         {
             var N_site_types = sim.site_types.Count;
@@ -425,7 +435,7 @@ private static void parse_dpd_sim( StreamReader f, DPDSim sim )
             sim.interactions[ (i*N_site_types)+j ] = Convert.ToDouble( tokens[2] ); // symmetrical!
             sim.interactions[ (j*N_site_types)+i ] = sim.interactions[ (i*N_site_types)+j ];
         }
-        // if in molecule section...
+        // if parsing a molecule ...
         else if( parse_state == ParseState.Molecule )
         {
             var key = tokens[0];
@@ -483,7 +493,7 @@ private static void parse_dpd_sim( StreamReader f, DPDSim sim )
                 Console.WriteLine( "Unknown entry {0} found on line {1} in molecule; ignoring.", key, line_no );
             }
         }
-        // if in coords section...
+        // if parsing the coords ...
         else if( parse_state == ParseState.Coords )
         {
             if( site_upto > sim.site_ids.Length )
@@ -528,7 +538,7 @@ private static void parse_dpd_sim( StreamReader f, DPDSim sim )
             }
             site_upto++;
         }
-        // assume this line defines the parse section
+        // did we find the start of a defined parse section?
         else
         {
             string key = tokens[0];
@@ -592,7 +602,7 @@ private static void parse_dpd_sim( StreamReader f, DPDSim sim )
     }
 
     //
-    // Print system information.
+    // Print some system information.
     //
     {       
         Console.WriteLine( "DPD simulation parameters:" );
@@ -653,6 +663,9 @@ private static void parse_dpd_sim( StreamReader f, DPDSim sim )
         }
     }
 
+    //
+    // prtin nonbonded interaction table
+    //
     {
         var N_site_types = sim.site_types.Count;
         Console.Write( "{0} interactions (defined in kBT):\n{1,12:S}", N_site_types, "              " );
@@ -673,7 +686,7 @@ private static void parse_dpd_sim( StreamReader f, DPDSim sim )
     }
 
     //
-    // check the sites we have tally with the molecular data.
+    // Check the defined sites agree with those expected from the molecule definitions
     //
     {
         var l = 0;
@@ -721,6 +734,9 @@ private static void parse_dpd_sim( StreamReader f, DPDSim sim )
     }
 }
 
+//
+// Write a DPD input file-style molecule definition.
+//
 private static void write_molecule_type( StreamWriter f, DPDMoleculeType mol, DPDSim sim )
 {
     var N_sites = mol.site_internal_ids.Count;

@@ -19,6 +19,9 @@ public class Ran1
     private static int iset = 0; 
     private static double gset; 
 
+    //
+    // Uniform PRNG
+    //
     public static double ran1( ref long idum )
     {
         var IA = 16807;
@@ -35,13 +38,17 @@ public class Ran1
         
         if( idum <= 0 || iy == 0 )
         {
-            //Initialize.
+            //
+            // Initialize.
+            //
             if (-idum < 1) idum = 1; // Be sure to prevent idum = 0.
             else idum = -idum;
 
             for( j = NTAB+7; j >= 0; j-- )
             {
+                //
                 // Load the shuffle table ( after 8 warm-ups ).
+                //
                 k = idum / IQ; 
                 idum = IA*(idum-k*IQ) - IR*k; 
                 if( idum < 0 ) idum += IM; 
@@ -60,6 +67,9 @@ public class Ran1
         else return temp;
     }
 
+    //
+    // Sample from Gaussian distribution
+    //
     public static double gasdev( ref long idum )
     {
         double fac, rsq, v1, v2; 
@@ -68,8 +78,10 @@ public class Ran1
 
         if( iset == 0 )
         {
+            //
             // We don’t have an extra deviate handy, so pick two uniform numbers in the square
             // extending from -1 to +1 in each direction
+            //
             do
             {
                 v1 = 2.0*ran1( ref idum )-1.0;
@@ -77,15 +89,20 @@ public class Ran1
                 rsq = v1*v1+v2*v2; // see if they are in the unit circle,
             } while( rsq >= 1.0 || rsq == 0.0 ); // and if they are not, try again.
             fac = Math.Sqrt( -2.0* ( (float)Math.Log((double)rsq)/rsq ) );
-            // Now make the Box-Muller transformation to get two normal deviates.
+
+            //
+            // Box-Muller transformation to get two normal deviates.
             // Return one and save the other for next time.
+            //
             gset = v1*fac;
             iset = 1; // Set flag.
             return (float) v2*fac;
         }
         else
         {
+            //
             // We have an extra deviate handy, so unset the flag and return it.
+            //
             iset = 0;
             return (float) gset;
         } 

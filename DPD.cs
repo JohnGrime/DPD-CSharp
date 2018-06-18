@@ -219,7 +219,7 @@ public class DPDSim
     //
     // Remove any net momentum from the system (assumes all particles same mass)
     //
-    public void ZeroMomentum()
+    public void ZeroNetMomentum()
     {
         var N_sites = site_ids.Length;
         var net_m = new double[3];

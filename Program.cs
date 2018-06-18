@@ -10,7 +10,6 @@ class Program
 {
     private static void save_checkpoint_and_trajectory( DPDSim sim )
     {
-
         try
         {
             using( StreamWriter f = File.CreateText("output.checkpoint") )
@@ -43,6 +42,7 @@ class Program
         //
         // Load DPD sim data
         //
+
         try
         {
             using( StreamReader f = File.OpenText(args[0]) )
@@ -59,6 +59,10 @@ class Program
         //
         // Print initial system info
         //
+
+        Console.WriteLine( "Friction coefficient is {0} ( as sigma = {1} )", sim.fric, sim.sigma );  
+        Console.WriteLine( "Bead density is {0} per cubic Rc", ((double)sim.site_ids.Length) / (sim.cell[0]*sim.cell[1]*sim.cell[2]) );
+
         {
             sim.ClearEnergyAndPressure();
 
@@ -74,6 +78,7 @@ class Program
         //
         // Main integration loop
         //
+
         var time_start = DateTime.Now;
         for( ; sim.step_no <= sim.max_steps; sim.step_no++ )
         {
@@ -87,20 +92,21 @@ class Program
             }
             if( sim.step_no % sim.print_every == 0 )
             {
-                var time_now = DateTime.Now;
-                var elapsed = time_now - time_start;
+                var elapsed = DateTime.Now - time_start;
                 DPDIO.PrintSimInfo( sim, elapsed.TotalSeconds );
             }       
         }
 
-        {
-            var time_now = DateTime.Now;
-            var elapsed = time_now - time_start;
-        }
+        //
+        // Final information
+        //
 
-        //
-        // Save final information.
-        //
+        Console.WriteLine( "" );
+        Console.WriteLine( "Final information:" );
+        Console.WriteLine( "" );
+        
+        var elapsed = DateTime.Now - time_start;
+        DPDIO.PrintSimInfo( sim, elapsed.TotalSeconds );
         save_checkpoint_and_trajectory( sim );
     }
 }

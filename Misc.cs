@@ -20,6 +20,10 @@ public class Misc
         z_ = z - cell[2] * Math.Round( z/cell[2], MidpointRounding.AwayFromZero );
     }
 
+    //
+    // On error, print information about where the error occurred as well
+    // as the error message.
+    //
     public static void DPDError( string fmt, params object[] args )
     {
         var sf = new StackTrace( fNeedFileInfo: true ).GetFrame( 1 );

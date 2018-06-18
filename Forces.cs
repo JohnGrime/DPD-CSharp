@@ -60,7 +60,6 @@ public class Forces
             sim.f[ (j*3)+1 ] -= fy;
             sim.f[ (j*3)+2 ] -= fz;
             
-            
             //
             // Accumulate bond energy
             //
@@ -202,30 +201,34 @@ public class Forces
         double fx, fy, fz;
         double vx, vy, vz;
         
-        // Ignore bound sites. I should really unroll this loop for speed, but this is "nicer" for changing MAX_EXCLUSION_ENTRY etc.
+        var i_off = i*3;
+        var j_off = j*3;
+
+        //
+        // Ignore bound sites. I should really unroll this loop for speed, but this is "nicer" for changing MaxExclusionEntries etc.
+        //
         for( var k=0; k<DPDSim.MaxExclusionEntries; k++ )
         {
             if( sim.exclude[ (i*DPDSim.MaxExclusionEntries)+k ] == j ) return;
         }
         
-        // offset into the positions arrays for sites i and j. Flat arrays, so each position is 3 consecutive numbers.
-        var i_off = i*3;
-        var j_off = j*3;
-
+        //
+        // Difference in particle positions (minimum image convention is applied) and velocities.
+        // Try for the early skip, so we don't waste time reading velocities etc from memory if
+        // we don't need to (should also help reduce cache pressure etc).
+        //
         dx = sim.r[ i_off+0 ] - sim.r[ j_off+0 ];
         dy = sim.r[ i_off+1 ] - sim.r[ j_off+1 ];
         dz = sim.r[ i_off+2 ] - sim.r[ j_off+2 ];
-
         VecMinimumImage( dx,dy,dz, ref dx, ref dy, ref dz, ref sim.cell );
+        double r_mag = (dx*dx + dy*dy + dz*dz);
+
+        // Avoid sqrt() until we know it's needed, compare squared distances instead
+        if( r_mag > cutsq ) return;
 
         vx = sim.v[i_off+0] - sim.v[j_off+0];
         vy = sim.v[i_off+1] - sim.v[j_off+1];
         vz = sim.v[i_off+2] - sim.v[j_off+2];
-
-        double r_mag = (dx*dx + dy*dy + dz*dz);
-
-        // avoids sqrt() where not needed - check the squares instead.
-        if( r_mag > cutsq ) return;
 
         r_mag = Math.Sqrt( r_mag );
         dx_hat = dx / r_mag;
@@ -234,34 +237,44 @@ public class Forces
 
         double rhat_dot_v = (dx_hat*vx) + (dy_hat*vy) + (dz_hat*vz);
 
-        // conservative and random weightings are the same,
-        // dissipative weight = random weight^2 
+        //
+        // Conservative and random weightings are the same, dissipative
+        // weight = random weight^2
+        //
         double cons_weight = 1.0 - r_mag/sim.rcut;
         double rand_weight = cons_weight;
         double diss_weight = rand_weight*rand_weight;
 
-        // conservative contribution (interactions defined in kBT)
+        //
+        // Conservative interaction parameters (interactions defined in kBT)
+        //
         double a = sim.interactions[ (sim.site_ids[i]*sim.site_types.Count)+sim.site_ids[j] ];
         sim.nonbonded_energy += a * ( r_mag*( (r_mag/(2.0*sim.rcut)) - 1 ) + (sim.rcut/2.0) );
 
-        // accumulate conservative force
+        //
+        // Accumulate conservative force
+        //
         fx = a*cons_weight*dx_hat;
         fy = a*cons_weight*dy_hat;
         fz = a*cons_weight*dz_hat;
 
-        // accumulate dissipative force
+        //
+        // Accumulate dissipative force
+        //
         fx += -sim.fric * diss_weight * rhat_dot_v * dx_hat;
         fy += -sim.fric * diss_weight * rhat_dot_v * dy_hat;
         fz += -sim.fric * diss_weight * rhat_dot_v * dz_hat;
 
-        // accumulate random force - use gasdev() routine for zero mean and unit variance.
+        //
+        // Accumulate random force - use gasdev() routine for zero mean and unit variance.
+        //
         double random_number = (double) Ran1.gasdev( ref sim.ran1_value );
         fx += sim.sigma * rand_weight * random_number * dx_hat / sqrt_dt;
         fx += sim.sigma * rand_weight * random_number * dy_hat / sqrt_dt;
         fx += sim.sigma * rand_weight * random_number * dz_hat / sqrt_dt;
 
         //
-        // Update sim force array, and add contributions to pressure tensor.
+        // Update sim force arrays
         //
         sim.f[i_off+0] += fx;
         sim.f[i_off+1] += fy;
@@ -271,7 +284,9 @@ public class Forces
         sim.f[j_off+1] -= fy;
         sim.f[j_off+2] -= fz;
         
-        // random pressure tensor contribution
+        //
+        // Pressure tensor contribution
+        //
         sim.pressure[0] += dx * fx;
         sim.pressure[1] += dx * fy;
         sim.pressure[2] += dx * fz;
@@ -284,19 +299,21 @@ public class Forces
         sim.pressure[7] += dz * fy;
         sim.pressure[8] += dz * fz;
 
-        // keep a tally of number of interactions
+        //
+        // Maintain a tally of the number of pair interactions
+        //
         sim.ninteractions += 1.0;
     }
 
     //
-    // This is the naive loop over pairs in the system.
-    // Simple, but *extremely* inefficient as number of particles or particle density increases.
+    // This is the naive loop over pairs in the system. Simple, but
+    // *extremely* inefficient as number of particles or particle density increases.
     //
     public static void DoNonbonded( DPDSim sim )
     {
         var N = sim.site_ids.Length;
-        double cutsq = sim.rcut * sim.rcut;   // precalculate
-        double sqrt_dt = Math.Sqrt( sim.delta_t ); // precalculate
+        double cutsq = sim.rcut * sim.rcut;
+        double sqrt_dt = Math.Sqrt( sim.delta_t );
         
         for( var i=0; i<N; i++ )
         {
@@ -339,20 +356,24 @@ public class Forces
                 sim.cell_head.Length, ncells );
         }
 
-        // reset head indices.
+        //
+        // Reset cell head indices.
+        //
         for( var i=0; i<sim.cell_head.Length; i++ ) sim.cell_head[i] = -1;
 
-        // assign sites to cells, and update head lists etc.
+        //
+        // Assign sites to cells, update cell head indices.
+        //
         if( sim.cell_next.Length != N ) Array.Resize( ref sim.cell_next, N );
         for( var i=0; i<N; i++ )
         {
             var j = i*3;
+
             var cellx = (int) Math.Floor( ((sim.r[j+0]/sim.cell[0]) + 0.5) * ncellx );
             var celly = (int) Math.Floor( ((sim.r[j+1]/sim.cell[1]) + 0.5) * ncelly );
             var cellz = (int) Math.Floor( ((sim.r[j+2]/sim.cell[2]) + 0.5) * ncellz );
-
-            // update linked lists.
             var cell_no = cellx + (celly*ncellx) + (cellz*ncelly*ncellx);
+
             sim.cell_next[i] = sim.cell_head[cell_no];
             sim.cell_head[cell_no] = i;
         }
@@ -367,10 +388,14 @@ public class Forces
                 for( var cellx=0; cellx<ncellx; cellx++ )
                 {
                     var cell_no = cellx + (celly*ncellx) + (cellz*ncelly*ncellx);
+                    //
                     // Loop over contents of current cell
+                    //
                     for( var i=sim.cell_head[cell_no]; i!=-1; i=sim.cell_next[i] )
                     {
-                        // loop over contents of neighbour cells, and current cell ( at offset 0 in cell_neighbours )
+                        //
+                        // Loop over contents of neighbour cells ( includes central cell at offset 0 in cell_neighbours )
+                        //
                         for( var k = 0; k < DPDSim.nneighbours; k++ )
                         {
                             var j = k; // dummy initialization, to make sure correct type. Value overwritten below.
