@@ -2,7 +2,7 @@
 
 _A simple dissipative particle dyanmics code written in C#_
 
-Includes example Docker file for building containerized derivatives for deployment on e.g. Amazon Web Services.
+**Note: this document is obviously incomplete at this stage!**
 
 ## Requirements
 
