@@ -80,6 +80,7 @@ public class DPDSim
     // Per-particle information
     //
     public int[] site_ids = new int[1];
+    public int[] molecule_ids = new int[1];
     public double[] r = new double[1];
     public double[] v = new double[1];
     public double[] f = new double[1];
@@ -145,6 +146,7 @@ public class DPDSim
         molecule_types.Clear();
 
         Array.Resize( ref site_ids, 0 );
+        Array.Resize( ref molecule_ids, 0 );
         Array.Resize( ref r, 0 );
         Array.Resize( ref v, 0 );
         Array.Resize( ref f, 0 );

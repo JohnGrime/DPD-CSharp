@@ -38,6 +38,7 @@ public static void LoadSim( StreamReader f, DPDSim sim )
     //
     int sys_bond_upto = 0;
     int sys_angle_upto = 0;
+    int sys_molecule_id = 0;
     int offset = 0; // start index into system sites for the current molecule
     foreach( var mol in sim.molecule_types )
     {
@@ -79,6 +80,10 @@ public static void LoadSim( StreamReader f, DPDSim sim )
                 sys_angle_upto++;
             }
 
+            N = mol.site_internal_ids.Count;
+            for( var i=0; i<N; i++ ) sim.molecule_ids[offset+i] = sys_molecule_id;
+
+            sys_molecule_id++;
             offset += mol.site_internal_ids.Count; // update current site offset for bond indices.
         }
     }
@@ -250,11 +255,11 @@ public static void SaveTrajectoryFrame( StreamWriter f, DPDSim sim )
     f.WriteLine( "{0:G} {1:G}", -sim.cell[1]/2, +sim.cell[1]/2 );
     f.WriteLine( "{0:G} {1:G}", -sim.cell[2]/2, +sim.cell[2]/2 );
 
-    f.WriteLine( "ITEM: ATOMS id type x y z" );
+    f.WriteLine( "ITEM: ATOMS id type mol x y z" );
     for( var i=0; i<sim.site_ids.Length; i++ )
     {
-        f.WriteLine( "{0} {1} {2:G} {3:G} {4:G}",
-            i+1, sim.site_ids[i]+1, sim.r[(i*3)+0], sim.r[(i*3)+1], sim.r[(i*3)+2] );
+        f.WriteLine( "{0} {1} {2} {3:G} {4:G} {5:G}",
+            i+1, sim.site_ids[i]+1, sim.molecule_ids[i]+1, sim.r[(i*3)+0], sim.r[(i*3)+1], sim.r[(i*3)+2] );
     }
 }
 
@@ -569,6 +574,7 @@ private static void parse_dpd_sim( StreamReader f, DPDSim sim )
                 }
 
                 Array.Resize( ref sim.site_ids, N_sites );
+                Array.Resize( ref sim.molecule_ids, N_sites );
 
                 Array.Resize( ref sim.r, N_sites*3 );
                 Array.Resize( ref sim.v, N_sites*3 );
@@ -663,7 +669,7 @@ private static void parse_dpd_sim( StreamReader f, DPDSim sim )
     }
 
     //
-    // prtin nonbonded interaction table
+    // Print nonbonded interaction table
     //
     {
         var N_site_types = sim.site_types.Count;
