@@ -125,7 +125,7 @@ On my machine, this produced the following (partial) output:
 		Net system momentum   =     0.000000     0.000000     0.000000
 
 
-After a few thousand timesteps, the system should move from complete disorder to form a lamellar bilyer membrane system (**Fig. 1**).
+After a few thousand timesteps, the system should move from disorder to form a lamellar lipid bilyer membrane system (**Fig. 1**, lipid "tails" are gray, lipid "head" region is blue, water not shown).
 
 ![DPD self-assembled lamellar bilayer membrane system](./blm.png)
 

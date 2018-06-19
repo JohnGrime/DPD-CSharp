@@ -12,6 +12,9 @@ public class DPDSiteType
     public int internal_id = 0;
 }
 
+//
+// Uses List class, as progressive additions when parsing sim description.
+//
 public class DPDMoleculeType
 {
     public string name = "";
@@ -44,6 +47,10 @@ public class DPDMoleculeType
     }
 }
 
+//
+// Uses Array class for performance, as single generation of internal arrays but very frequent access at runtime.
+// Simple testing indicates this approach is more than twice as fast.
+//
 public class DPDSim
 {
     public readonly static int MaxExclusionEntries = 4;

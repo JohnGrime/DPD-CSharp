@@ -302,7 +302,7 @@ public static void PrintSimInfo( DPDSim sim, double cpu_time )
     com[1] = com[1] / N_sites;
     com[2] = com[2] / N_sites;
 
-    Console.WriteLine( "Step {0}/{1}, sim time {2,12:F2}, CPU time {3:F0}s:",
+    Console.WriteLine( "Step {0}/{1}, sim time {2:F2}, CPU time {3:F0}s:",
         sim.step_no, sim.max_steps, sim.step_no * sim.delta_t, cpu_time );
 
     Console.WriteLine( "\tTotal energy     : {0,12:F6}",
