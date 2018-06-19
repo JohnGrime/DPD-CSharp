@@ -1,4 +1,4 @@
-import sys, math, random
+import sys, math
 
 def GenLipid( head_sites, tail_sites, N_tails ):
 	"""
@@ -393,13 +393,6 @@ settings['cell'] = [Lx,Ly,Lz]
 
 #
 # Generate DPD system & write inut file
-#
-
-#
-# Lx/delta * Ly/delta * Lz/delta = N
-# (Lx*Ly*Lz)/(delta^3) = N
-# (Lx*Ly*Lz)/N = delta^3
-# cbrt( (Lx*Ly*Lz)/N ) = delta
 #
 
 Lx, Ly, Lz = settings["cell"]
