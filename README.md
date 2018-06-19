@@ -4,7 +4,7 @@ _A simple dissipative particle dynamics code written in C#_
 
 **Note: this document is obviously incomplete at this stage!**
 
-This code implements a version of the dissipative particle dynamics (DPD) approach of [Hoogerbrugge and Koelman](http://iopscience.iop.org/article/10.1209/0295-5075/19/3/001/pdf), with a particular emphasis on the application of DPD to the sudy of self-assembling lipid systems after Venturoli and co-workers [[1]](http://pubs.rsc.org/en/content/articlelanding/1999/qu/a906472i) [[2]](https://www.cell.com/biophysj/fulltext/S0006-3495(05)73243-4).
+This code implements a version of the dissipative particle dynamics (DPD) approach of [Hoogerbrugge and Koelman](http://iopscience.iop.org/article/10.1209/0295-5075/19/3/001/pdf), with a particular emphasis on the application of DPD to the study of self-assembling lipid systems after Venturoli and co-workers [[1]](http://pubs.rsc.org/en/content/articlelanding/1999/qu/a906472i) [[2]](https://www.cell.com/biophysj/fulltext/S0006-3495(05)73243-4).
 
 ## Requirements
 
