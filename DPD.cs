@@ -13,7 +13,9 @@ public class DPDSiteType
 }
 
 //
-// Uses List class, as progressive additions when parsing sim description.
+// List used for internal storage; information added progressively during file parse,
+// so Add() routines are convenient. Performance less important here, as the internal
+// arrays are expanded into DPDSim's internal arrays and not really used after that.
 //
 public class DPDMoleculeType
 {
@@ -48,8 +50,8 @@ public class DPDMoleculeType
 }
 
 //
-// Uses Array class for performance, as single generation of internal arrays but very frequent access at runtime.
-// Simple testing indicates this approach is more than twice as fast.
+// Array used for internal storage for performance: frequent accesses at runtime.
+// Simple testing indicates this approach is more than twice as fast as using List.
 //
 public class DPDSim
 {
@@ -172,7 +174,7 @@ public class DPDSim
         Array.Resize( ref angle_eq, 0 );
         Array.Resize( ref angle_k, 0 );
 
-        for( var i=0; i<3; i++ ) cell[i] = 10.0;
+        for( var i=0; i<3; i++ ) cell[i] = 1.0;
         for( var i=0; i<9; i++ ) pressure[i] = 0.0;
 
         step_no = 0;
@@ -226,7 +228,7 @@ public class DPDSim
     }
 
     //
-    // Remove any net momentum from the system (assumes all particles same mass)
+    // Remove any net momentum from the system (assumes particles all have same mass)
     //
     public void ZeroNetMomentum()
     {
@@ -259,7 +261,7 @@ public class DPDSim
     }
 
     //
-    // Generate the neighbour cells.
+    // Generate the link cell structures
     //
     public void SetupCells()
     {   

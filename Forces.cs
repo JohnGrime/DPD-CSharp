@@ -152,9 +152,9 @@ public class Forces
             fz_k = -cik*dz_ij + ckk*dz_jk;
 
             //
-            // Force acting on the central site calculated form other forces; we know
-            // an angle potential is internal, so net acceleration on the 3 sites should
-            // be zero, and hence if two forces known third must cancel out their sum.
+            // Force acting on the central site calculated form other forces; angle
+            // potential is conservative and internal, so net acceleration on the 3
+            // sites from angle force should be zero. Hence, forces should cancel.
             //
             sim.f[ (i*3)+0 ] += fx_i;
             sim.f[ (i*3)+1 ] += fy_i;
@@ -192,7 +192,7 @@ public class Forces
     }
 
     //
-    // This is the actual DPD force calculation for two nonbonded sites.
+    // This is the actual DPD pair force calculation for two nonbonded sites.
     //
     private static void nonbonded_pair( int i, int j, double cutsq, double sqrt_dt, DPDSim sim )
     {
@@ -205,7 +205,7 @@ public class Forces
         var j_off = j*3;
 
         //
-        // Ignore bound sites. I should really unroll this loop for speed, but this is "nicer" for changing MaxExclusionEntries etc.
+        // Ignore bound sites. I should probably check generated code to see this is worth unrolling.
         //
         for( var k=0; k<DPDSim.MaxExclusionEntries; k++ )
         {
@@ -214,7 +214,7 @@ public class Forces
         
         //
         // Difference in particle positions (minimum image convention is applied) and velocities.
-        // Try for the early skip, so we don't waste time reading velocities etc from memory if
+        // Try for the early skip, so we don't waste time reading velocities from memory if
         // we don't need to (should also help reduce cache pressure etc).
         //
         dx = sim.r[ i_off+0 ] - sim.r[ j_off+0 ];
@@ -266,7 +266,7 @@ public class Forces
         fz += -sim.fric * diss_weight * rhat_dot_v * dz_hat;
 
         //
-        // Accumulate random force - use gasdev() routine for zero mean and unit variance.
+        // Accumulate random force - gasdev() returns zero mean, unit variance.
         //
         double random_number = (double) Ran1.gasdev( ref sim.ran1_value );
         fx += sim.sigma * rand_weight * random_number * dx_hat / sqrt_dt;
@@ -307,7 +307,7 @@ public class Forces
 
     //
     // This is the naive loop over pairs in the system. Simple, but
-    // *extremely* inefficient as number of particles or particle density increases.
+    // *extremely* inefficient ( ~ O(N^2) ).
     //
     public static void DoNonbondedSlow( DPDSim sim )
     {
@@ -325,8 +325,8 @@ public class Forces
     }
 
     //
-    // Faster method to evaluate pair interactions.
-    // For more info on the linked list cell algorithm see Allen & Tildesley, Computer Simulation of Liquids.
+    // Faster method to evaluate pair interactions using link cells ( ~ O(N) ).
+    // Negelects Verlet lists for simplicity; instead, iterates over link cells every time.
     // Assumes periodic wrap applied before this routine is called.
     //
     public static void DoNonbondedFast( DPDSim sim )
@@ -346,7 +346,7 @@ public class Forces
         var ncells = ncellx*ncelly*ncellz;
 
         //
-        // If we're using a dynamic simulation cell, uncomment the following line!
+        // If we're using a dynamic simulation cell, regenerate if/when needed.
         //
         //SetupCells( sim );
 
@@ -362,7 +362,7 @@ public class Forces
         for( var i=0; i<sim.cell_head.Length; i++ ) sim.cell_head[i] = -1;
 
         //
-        // Assign sites to cells, update cell head indices.
+        // Assign sites to cells, update cell head indices and contents.
         //
         if( sim.cell_next.Length != N ) Array.Resize( ref sim.cell_next, N );
         for( var i=0; i<N; i++ )
@@ -381,29 +381,26 @@ public class Forces
         //
         // Faster version of pairwise interactions using neighbour cells.
         //
-        for( var cellz=0; cellz<ncellz; cellz++ )
+
+        //
+        // Loop over all cells
+        //
+        for( var cell_no=0; cell_no<ncellx*ncelly*ncellz; cell_no++ )
         {
-            for( var celly=0; celly<ncelly; celly++ )
+            //
+            // Loop over contents of current cell
+            //
+            for( var i=sim.cell_head[cell_no]; i!=-1; i=sim.cell_next[i] )
             {
-                for( var cellx=0; cellx<ncellx; cellx++ )
+                //
+                // Loop over contents of neighbour cells ( includes central cell at offset 0 in cell_neighbours )
+                //
+                for( var k = 0; k < DPDSim.nneighbours; k++ )
                 {
-                    var cell_no = cellx + (celly*ncellx) + (cellz*ncelly*ncellx);
-                    //
-                    // Loop over contents of current cell
-                    //
-                    for( var i=sim.cell_head[cell_no]; i!=-1; i=sim.cell_next[i] )
-                    {
-                        //
-                        // Loop over contents of neighbour cells ( includes central cell at offset 0 in cell_neighbours )
-                        //
-                        for( var k = 0; k < DPDSim.nneighbours; k++ )
-                        {
-                            var j = k; // dummy initialization, to make sure correct type. Value overwritten below.
-                            if( k == 0 ) { j = sim.cell_next[i]; } // same cell: loop over j>i in current cell
-                            else { j = sim.cell_head[ sim.cell_neighbours[ (cell_no*DPDSim.nneighbours) + k ] ]; } // different cell: loop over all j in other cell
-                            for( ; j!=-1; j = sim.cell_next[j] ) nonbonded_pair( i, j, cutsq, sqrt_dt, sim );
-                        }
-                    }
+                    var j = k; // dummy initialization, to make sure correct type. Value overwritten below.
+                    if( k == 0 ) { j = sim.cell_next[i]; } // same cell: loop over j>i in current cell
+                    else { j = sim.cell_head[ sim.cell_neighbours[ (cell_no*DPDSim.nneighbours) + k ] ]; } // different cell: loop over all j in other cell
+                    for( ; j!=-1; j = sim.cell_next[j] ) nonbonded_pair( i, j, cutsq, sqrt_dt, sim );
                 }
             }
         }

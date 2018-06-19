@@ -15,7 +15,7 @@ public static void LoadSim( StreamReader f, DPDSim sim )
     parse_dpd_sim( f, sim );
 
     //
-    // How many bonds and angles do we need?
+    // How many bonds and angles do we need, given the molecule definitions?
     //
     int N_bonds = 0;
     int N_angles = 0;
@@ -90,8 +90,8 @@ public static void LoadSim( StreamReader f, DPDSim sim )
 
     //
     // Nonbonded exclusion lists; used in nonbonded force calculations.
-    // MaxExclusionEntries suggested to be 4. If a lower value is posible, use it!
-    // Only bonds used here; trivial to use angles too, but not needed for DPD.
+    // MaxExclusionEntries suggested to be 4.
+    // Only bonds used here; angles also trivial via i,k sites of angle i-j-k.
     //
     var MaxExclusions = DPDSim.MaxExclusionEntries;
     Array.Resize( ref sim.exclude, sim.site_ids.Length*MaxExclusions );
@@ -101,13 +101,13 @@ public static void LoadSim( StreamReader f, DPDSim sim )
         var i = sim.bond_site_indices[(bi*2)+0];
         var j = sim.bond_site_indices[(bi*2)+1];
         
-        // j exclusion
+        // i exclusion entry for j
         var l = 0;
         while( l<MaxExclusions && sim.exclude[ (i*MaxExclusions)+l ] != -1 ) l++;
         if( l == MaxExclusions ) DPDError( "Too few exclusion entries defined (1)" );
         sim.exclude[ (i*MaxExclusions)+l ] = j;
         
-        // k exclusion
+        // j exclusion entry for i
         l = 0;
         while( l<MaxExclusions && sim.exclude[ (j*MaxExclusions)+l ] != -1 ) l++;
         if( l == MaxExclusions ) DPDError( "Too few exclusion entries defined (2)" );
@@ -117,17 +117,17 @@ public static void LoadSim( StreamReader f, DPDSim sim )
     sim.ZeroNetMomentum();
 
     //
-    // Check whether the input file specified that the velocities should be initialised by the system...
+    // Should we initialize the system velocities, or leave the existing values?
     //
     if( sim.step_no < 1 )
     {
-        Console.WriteLine( "step_no < 1, so assuming system initialisation desired; selecting site velocities from a Gaussian distribution." );
+        Console.WriteLine( "step_no < 1, assuming system initialisation required; site velocities set from a Gaussian distribution." );
         sim.step_no = 1;
         sim.SetInitialVelocities();
     }
 
     //
-    // Wrap particle positions that have crossed a periodic boundary
+    // Wrap particle positions that lie outside the periodic cell
     //
     {
         for( var i=0; i<sim.site_ids.Length; i++ )
@@ -149,7 +149,7 @@ public static void LoadSim( StreamReader f, DPDSim sim )
     sim.SetupCells();
     
     //
-    // Calculate friction_coefficient from sigma; sigma^2 = 2*fric*kBT
+    // Calculate friction coefficient from sigma; sigma^2 = 2*fric*kBT
     //
     sim.fric = (sim.sigma*sim.sigma) / (2.0*sim.target_kBT);
     
@@ -268,17 +268,18 @@ public static void SaveTrajectoryFrame( StreamWriter f, DPDSim sim )
 //
 public static void PrintSimInfo( DPDSim sim, double cpu_time )
 {
-    var com = new double[3];
-    var mom = new double[3];
+    var com = new double[3]; // centre of mass
+    var mom = new double[3]; // net momentum
 
     var N_sites = sim.site_ids.Length;
     var N_bonds = sim.bond_site_indices.Length;
     var N_angles = sim.angle_site_indices.Length;
     
-    //print some info
+    //
+    // Determine current centre of mass and net momentum of the system
+    //
     com[0] = com[1] = com[2] = 0.0;
     mom[0] = mom[1] = mom[2] = 0.0;
-    double kBT = 0.0;
     for( var i=0; i<N_sites; i++ )
     {
         com[0] += sim.r[(i*3)+0];
@@ -292,23 +293,24 @@ public static void PrintSimInfo( DPDSim sim, double cpu_time )
         mom[0] += vx;
         mom[1] += vy;
         mom[2] += vz;
-        
-        kBT += 0.5 * ( vx*vx + vy*vy + vz*vz );
     }
-    
-    kBT = (2.0/3.0) * (kBT/(N_sites-1));
-    
     com[0] = com[0] / N_sites;
     com[1] = com[1] / N_sites;
     com[2] = com[2] / N_sites;
 
+    //
+    // Estimate kBT via ensemble average kinetic energy of particle ( KE_p = <1/2 m.v^2> ):
+    // KE_p = 3/2 kBT ; kBT = 2/3 KE_p
+    //
+    var kBT = (2.0/3.0) * (sim.kinetic_energy/N_sites);
+    
     Console.WriteLine( "Step {0}/{1}, sim time {2:F2}, CPU time {3:F0}s:",
         sim.step_no, sim.max_steps, sim.step_no * sim.delta_t, cpu_time );
 
     Console.WriteLine( "\tTotal energy     : {0,12:F6}",
         sim.kinetic_energy + sim.nonbonded_energy + sim.bond_energy + sim.angle_energy );
 
-    Console.WriteLine( "\tKinetic energy   : {0,12:F6} ( Average {1,12:F6}, target kBT {2,12:F6}, current kBT {3,12:F6} )",
+    Console.WriteLine( "\tKinetic energy   : {0,12:F6} ( Average {1,12:F6}, target kBT {2,12:F6}, current kBT {3,12:F6}",
         sim.kinetic_energy, sim.kinetic_energy / N_sites, sim.target_kBT, kBT );
 
     Console.WriteLine( "\tNonbonded energy : {0,12:F6} ( Average {1,12:F6} from {2:F0} collisions )",
@@ -341,7 +343,7 @@ public static void PrintSimInfo( DPDSim sim, double cpu_time )
 //
 
 //
-// Return the internal id ( ie. index into the site type array ) for a site of type "name"
+// Return the internal site id ( i.e., the index sim.site_types[] ) for type "name"
 //
 private static int get_site_type_from_name( string name, DPDSim sim )
 {
@@ -353,14 +355,14 @@ private static int get_site_type_from_name( string name, DPDSim sim )
 }
 
 //
-// Here be dragons. Don't modify unless you known what you're doing!
+// Here be dragons! Don't modify this unless you known what you're doing!
 //
 private enum ParseState { None, Settings, Sites, Molecule, Interactions, Coords };
 private static void parse_dpd_sim( StreamReader f, DPDSim sim )
 {
     var delim = new char[] { ' ', ',', '\t' };
     string linebuffer;
-    int cell_found = 0;
+    bool cell_found = false;
 
     ParseState parse_state = ParseState.None;
     
@@ -410,7 +412,7 @@ private static void parse_dpd_sim( StreamReader f, DPDSim sim )
             else if( key == "dumb" ) sim.i_am_dumb = 1;
             else if( key == "cell" ) 
             {
-                cell_found = 1;
+                cell_found = true;
                 sim.cell[0] = Convert.ToDouble( tokens[1] );
                 sim.cell[1] = Convert.ToDouble( tokens[2] );
                 sim.cell[2] = Convert.ToDouble( tokens[3] );
@@ -595,7 +597,7 @@ private static void parse_dpd_sim( StreamReader f, DPDSim sim )
     //
     // Check for some obvious problems with the input.
     //
-    if( cell_found == 0 ) DPDError( "cell not defined in DPD sim file" );
+    if( !cell_found ) DPDError( "cell not defined in DPD sim file" );
     if( sim.cell[0]/2.0 < sim.rcut || sim.cell[1]/2.0 < sim.rcut || sim.cell[2]/2.0 < sim.rcut ) DPDError( "A cell dimension divided by two is smaller than rcut" );
     if( sim.site_types.Count == 0 ) DPDError( "No sites defined in file" );
     if( sim.molecule_types.Count == 0 ) DPDError( "No molecules defined in file" );
@@ -608,6 +610,10 @@ private static void parse_dpd_sim( StreamReader f, DPDSim sim )
 
     //
     // Print some system information.
+    //
+
+    //
+    // System settings
     //
     {       
         Console.WriteLine( "DPD simulation parameters:" );
@@ -626,12 +632,18 @@ private static void parse_dpd_sim( StreamReader f, DPDSim sim )
         if( sim.i_am_dumb == 1 ) Console.WriteLine( "\t!!! This simulation is dumb regarding nonbonded interactions !!!" );      
     }
 
+    //
+    // Site types
+    //
     Console.WriteLine( "{0} site types:", sim.site_types.Count );
     for( var i=0; i<sim.site_types.Count; i++ )
     {
         Console.WriteLine( "\t{0}; (internal {1})", sim.site_types[i].name, sim.site_types[i].internal_id );
     }
 
+    //
+    // Molecule types
+    //
     Console.WriteLine( "{0} molecule types:", sim.molecule_types.Count );
     for( int mi=0; mi<sim.molecule_types.Count; mi++ )
     {
@@ -669,7 +681,7 @@ private static void parse_dpd_sim( StreamReader f, DPDSim sim )
     }
 
     //
-    // Print nonbonded interaction table
+    // Nonbonded interaction table
     //
     {
         var N_site_types = sim.site_types.Count;
@@ -691,7 +703,7 @@ private static void parse_dpd_sim( StreamReader f, DPDSim sim )
     }
 
     //
-    // Check the defined sites agree with those expected from the molecule definitions
+    // Check the list of sites agrees with the types expected from the molecule definitions
     //
     {
         var l = 0;
@@ -719,24 +731,7 @@ private static void parse_dpd_sim( StreamReader f, DPDSim sim )
         }
     }
 
-    Console.WriteLine( "Sites ({0}):", sim.site_ids.Length );
-    if( sim.site_ids.Length > 10 )
-    {
-        Console.WriteLine( "\t( printing truncated to first 10 sites )\n" );
-        for( var i=0; i<10; i++ )
-        {
-            Console.WriteLine( "\t{0} (internal {1}), position = {2:F3}, {2:F3}, {2:F3}",
-                sim.site_types[ sim.site_ids[i] ].name, sim.site_ids[i], sim.r[i*3], sim.r[(i*3)+1], sim.r[(i*3)+2] );
-        }
-    }
-    else
-    {
-        for( var i=0; i<sim.site_ids.Length; i++ )
-        {
-            Console.WriteLine( "\t{0} (internal {1}), position = {2:F3}, {2:F3}, {2:F3}",
-                sim.site_types[ sim.site_ids[i] ].name, sim.site_ids[i], sim.r[i*3], sim.r[(i*3)+1], sim.r[(i*3)+2] );
-        }
-    }
+    Console.WriteLine( "{0} sites", sim.site_ids.Length );
 }
 
 //
@@ -745,8 +740,8 @@ private static void parse_dpd_sim( StreamReader f, DPDSim sim )
 private static void write_molecule_type( StreamWriter f, DPDMoleculeType mol, DPDSim sim )
 {
     var N_sites = mol.site_internal_ids.Count;
-    var N_bonds = mol.bond_site_indices.Count / 2;
-    var N_angles = mol.angle_site_indices.Count / 3;
+    var N_bonds = mol.bond_k.Count;
+    var N_angles = mol.angle_k.Count;
 
     f.WriteLine( "molecule" );
     f.WriteLine( "\tname {0}", mol.name );

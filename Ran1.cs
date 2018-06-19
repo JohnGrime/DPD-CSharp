@@ -5,7 +5,7 @@ namespace DPD
     
 //
 // The ran1() function from Numerical Recipes in C: The Art of Scientific Computing ( ISBN: 0-521-43108-5 ).
-// Bad PRNG, but retained for consistency with results from the C++ version of the DPD code.
+// Bad PRNG, but retained for consistency with previous test data.
 // Call with idum as negative number to start, then do not alter idum!
 //
 public class Ran1

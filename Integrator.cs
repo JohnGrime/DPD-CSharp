@@ -28,7 +28,7 @@ public class Integrator
             sim.r[s+2] += dt*sim.v[s+2] + h_dt_sq*sim.f[s+2];
             
             //
-            // Apply periodic boundary conditions to new positions
+            // Wrap new positions to periodic boundary
             //
             sim.r[s+0] -= sim.cell[0] * Math.Round( sim.r[s+0]/sim.cell[0], MidpointRounding.AwayFromZero );
             sim.r[s+1] -= sim.cell[1] * Math.Round( sim.r[s+1]/sim.cell[1], MidpointRounding.AwayFromZero );
@@ -53,7 +53,7 @@ public class Integrator
             sim.v[s+2] += sim.lambda*dt*sim.f[s+2];
 
             //
-            // Zero force array, as nonbonded, bonded and angle force routines treat it as an accumulator.
+            // Zero force array; force routines treat it as an accumulator.
             //
             sim.f[s+0] = 0.0;
             sim.f[s+1] = 0.0;
@@ -62,7 +62,6 @@ public class Integrator
 
         //
         // Get new forces for these positions and temporary velocity prediction
-        // Note: DoNonbondedSlow() is the slow method; DoNonbondedFast() is the neighbour cell version.
         //
         if( sim.i_am_dumb == 1 ) Forces.DoNonbondedSlow( sim );
         else Forces.DoNonbondedFast( sim );
