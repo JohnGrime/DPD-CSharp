@@ -6,7 +6,7 @@ _A simple dissipative particle dyanmics code written in C#_
 
 ## Requirements
 
-* [.NET Core](https://www.microsoft.com/net/learn/get-started/macos)
+* [.NET Core](https://www.microsoft.com/net/learn/get-started/)
 
 ## Platform compatibility
 

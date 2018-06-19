@@ -244,7 +244,7 @@ def MakePDBAtomLine( serial, name, resName, chainID, resSeq, x, y, z ):
 	
 	return string
 
-def PrintPDBMolecule( f, atom_upto, mol_upto, resName, atom_sets, coords ):
+def PrintPDBMolecule( f, atom_upto, mol_upto, resName, atom_sets, coords, scale_factor = 1.0 ):
 	"""
 	Prints a PDB 'molecule' to file, where each set of atoms in the structure is
 	assigned a different chainID.
@@ -256,19 +256,22 @@ def PrintPDBMolecule( f, atom_upto, mol_upto, resName, atom_sets, coords ):
 	  resName (string) : resName to use in output as 'name' of molecule
 	  atom_sets (list of string lists) : each set is considered a different chain
 	  coords (list of [name,x,y,z] entries ) : coordinate data, indexed using atom_upto + offset
+	  scale_factor (float) : scale coords by this factor
 
 	Returns:
 	  Updated atom_upto and mol_upto values after writing the molecule data to file
 	"""
+	resSeq = 0
 	chains = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 	for si in range( 0, len(atom_sets) ):
 		for ai in range( 0, len(atom_sets[si]) ):
 			serial = atom_upto+ai
 			name = atom_sets[si][ai]
 			chainID = chains[si]
-			resSeq = mol_upto
+			resSeq += 1
+			#resSeq = mol_upto
 			x,y,z = coords[(atom_upto+ai)-1][1:4] # -1 as converting unit based to zero-based indices
-			line = MakePDBAtomLine( serial, name, resName, chainID, resSeq, x, y, z )
+			line = MakePDBAtomLine( serial, name, resName, chainID, resSeq, x*scale_factor, y*scale_factor, z*scale_factor )
 			print >>f, line
 		atom_upto += len(atom_sets[si])
 	mol_upto += 1
@@ -299,10 +302,10 @@ def PrintPDBMoleculeBonds( f, offset, bond_sets ):
 	output = None
 	counter = 0
 	for bi in range( 0, len(sorted_bonds) ):
-		b = sorted_bonds[bi]
 		counter += 1
+		b = sorted_bonds[bi]
 
-		if( (base!=b[0]) or (counter>4) ):
+		if( (base!=b[0]) or (counter>5) ):
 			if output != None: print >>f, output
 			base = b[0]
 			counter = 0
@@ -408,9 +411,9 @@ coords = []
 
 # All coords water, to start with
 for i in range( 0, N_sites_total ):
-	x = random.random() - 0.5
-	y = random.random() - 0.5
-	z = random.random() - 0.5
+	x = (random.random() - 0.5) * Lx
+	y = (random.random() - 0.5) * Ly
+	z = (random.random() - 0.5) * Lz
 	coords.append( ['w', x, y, z] )
 
 # Swap some waters to lipids
@@ -456,11 +459,13 @@ f = open( 'system.pdb', 'w' )
 atom_upto = 1
 mol_upto = 1
 
+scale_factor = 10.0
+
 for mi in range( 0, N_lipid_molecules ):
-	atom_upto, mol_upto = PrintPDBMolecule( f, atom_upto, mol_upto, 'LPD', lipid_sites, coords )
+	atom_upto, mol_upto = PrintPDBMolecule( f, atom_upto, mol_upto, 'LPD', lipid_sites, coords, scale_factor )
 
 for mi in range( 0, N_water_molecules ):
-	atom_upto, mol_upto = PrintPDBMolecule( f, atom_upto, mol_upto, 'SOL', [ ['w'] ], coords )
+	atom_upto, mol_upto = PrintPDBMolecule( f, atom_upto, mol_upto, 'SOL', [ ['w'] ], coords, scale_factor )
 
 atom_upto = 1
 
