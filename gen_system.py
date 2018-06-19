@@ -395,6 +395,13 @@ settings['cell'] = [Lx,Ly,Lz]
 # Generate DPD system & write inut file
 #
 
+#
+# Lx/delta * Ly/delta * Lz/delta = N
+# (Lx*Ly*Lz)/(delta^3) = N
+# (Lx*Ly*Lz)/N = delta^3
+# cbrt( (Lx*Ly*Lz)/N ) = delta
+#
+
 Lx, Ly, Lz = settings["cell"]
 
 head_sites = [ 'h' for i in range(0,head_len) ]
@@ -407,16 +414,31 @@ N_sites_total = int( Lx*Ly*Lz*rho )
 N_lipid_molecules = int( (phi*N_sites_total)/lipid_length )
 N_water_molecules = N_sites_total - (N_lipid_molecules*lipid_length)
 
+#
+# Arrange in an initial grid to prevent overlaps leading to e.g. VMD getting
+# confused about bonding.
+# All coords water to begin with, and we then change some into lipid.
+#
+
+delta = math.pow( Lx*Ly*Lz/N_sites_total, 1.0/3 )
+Nx = int( math.ceil( Lx/delta ) )
+Ny = int( math.ceil( Ly/delta ) )
+Nz = int( math.ceil( Lz/delta ) )
+
 coords = []
 
-# All coords water, to start with
-for i in range( 0, N_sites_total ):
-	x = (random.random() - 0.5) * Lx
-	y = (random.random() - 0.5) * Ly
-	z = (random.random() - 0.5) * Lz
-	coords.append( ['w', x, y, z] )
+for ix in range(0,Nx):
+	for iy in range(0,Ny):
+		for iz in range(0,Nz):
+			x = -Lx/2 + (0.5+ix)*delta
+			y = -Ly/2 + (0.5+iy)*delta
+			z = -Lz/2 + (0.5+iz)*delta
+			if len(coords) < N_sites_total:
+				coords.append( ['w',x,y,z] )
 
+#
 # Swap some waters to lipids
+#
 flat_names = []
 for domain in lipid_sites:
 	for s in domain:
@@ -427,6 +449,9 @@ for li in range( 0, N_lipid_molecules ):
 		coords[upto][0] = flat_names[i]
 		upto += 1
 
+#
+# Write a DPD sim file
+#
 
 f = sys.stdout
 
@@ -451,7 +476,8 @@ PrintCoords( f, coords )
 print >>f, ''
 
 #
-# Write PDB file for more straightforward visualization
+# Write PDB file for more straightforward visualization; not that we also scale the coords by 10x to stop
+# VMD's annoying autobond habit from ruining the specified bonding.
 #
 
 f = open( 'system.pdb', 'w' )
