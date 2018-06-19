@@ -1,8 +1,10 @@
 # DPD C#
 
-_A simple dissipative particle dyanmics code written in C#_
+_A simple dissipative particle dynamics code written in C#_
 
 **Note: this document is obviously incomplete at this stage!**
+
+This code implements a version of the dissipative particle dynamics (DPD) approach of [Hoogerbrugge and Koelman](http://iopscience.iop.org/article/10.1209/0295-5075/19/3/001/pdf), with a particular emphasis on the application of DPD to the sudy of self-assembling lipid systems after Venturoli and co-workers [1](http://pubs.rsc.org/en/content/articlelanding/1999/qu/a906472i) [2](https://www.cell.com/biophysj/fulltext/S0006-3495(05)73243-4).
 
 ## Requirements
 
@@ -22,7 +24,7 @@ On my machine, this produced the following (partial) output:
 
 	DPD simulation parameters:
 		step_no is 1
-		max_steps is 100000
+		max_steps is 25000
 		save_every is 1000
 		print_every is 1000
 		delta_t is 0.01
@@ -84,45 +86,34 @@ On my machine, this produced the following (partial) output:
 		           w	   25.000	   15.000	   80.000
 		           h	   15.000	   35.000	   80.000
 		           t	   80.000	   80.000	   25.000
-	Sites (3000):
-		( printing truncated to first 10 sites )
-
-		h (internal 1), position = -0.054, -0.054, -0.054
-		h (internal 1), position = 0.404, 0.404, 0.404
-		h (internal 1), position = 0.066, 0.066, 0.066
-		t (internal 2), position = 0.216, 0.216, 0.216
-		t (internal 2), position = -0.434, -0.434, -0.434
-		t (internal 2), position = -0.136, -0.136, -0.136
-		t (internal 2), position = -0.275, -0.275, -0.275
-		t (internal 2), position = 0.015, 0.015, 0.015
-		t (internal 2), position = 0.072, 0.072, 0.072
-		t (internal 2), position = 0.352, 0.352, 0.352
+	3000 sites
 	Friction coefficient is 4.5 ( as sigma = 3 )
 	Bead density is 3 per cubic Rc
-	Step 1/100000, sim time         0.01, CPU time 0s:
-		Total energy     : 19651557.916507
-		Kinetic energy   :     0.000000 ( Average     0.000000, target kBT     1.000000, current kBT     0.000000 )
-		Nonbonded energy : 19608421.785025 ( Average     4.796279 from 4088257 collisions )
-		Bond energy      :  4527.837056 ( Average     1.640521 )
-		Angle energy     : 38608.294426 ( Average    13.988512 )
-		Pressure         : 12976292.716443 -71477.737153 75707.862834
-		                   -62895.830638 12887770.397620 55693.329895
-		                   83465.750873 55693.329895 12881352.649045
-		System centre of mass =    -0.007375     0.001635    -0.005913
+	Step 1/25000, sim time 0.01, CPU time 0s:
+		Total energy     : 82611.000952
+		Kinetic energy   :     0.000000 ( Average     0.000000, target kBT     1.000000, current kBT     0.000000
+		Nonbonded energy : 17012.909054 ( Average     0.667697 from 25480 collisions )
+		Bond energy      : 63770.842239 ( Average    23.105378 )
+		Angle energy     :  1827.249659 ( Average     0.662047 )
+		Pressure         : 31750.091898   -74.144343  -979.841738
+		                     382.087685 26738.832904 -11612.713943
+		                    -895.692263 -11612.713943 -134962.321490
+		System centre of mass =    -0.371813    -0.536461    -0.466457
 		Net system momentum   =     0.000000     0.000000     0.000000
 
 
-	Step 1000/100000, sim time        10.00, CPU time 13s:
-		Total energy     : 19001.265820
-		Kinetic energy   :  5208.739275 ( Average     1.736246, target kBT     1.000000, current kBT     1.157884 )
-		Nonbonded energy : 11933.669336 ( Average     0.715662 from 16675 collisions )
-		Bond energy      :   989.162290 ( Average     0.358392 )
-		Angle energy     :   869.694919 ( Average     0.315107 )
-		Pressure         :    26.545026    -0.053005     0.202331
-		                       0.124360    22.807272    -0.020332
-		                       0.668986    -0.020332    23.542248
-		System centre of mass =     0.009292    -0.001699    -0.029246
+	Step 1000/25000, sim time 10.00, CPU time 13s:
+		Total energy     : 18461.168546
+		Kinetic energy   :  5035.358600 ( Average     1.678453, target kBT     1.000000, current kBT     1.118969
+		Nonbonded energy : 11588.845911 ( Average     0.697325 from 16619 collisions )
+		Bond energy      :  1000.591255 ( Average     0.362533 )
+		Angle energy     :   836.372780 ( Average     0.303034 )
+		Pressure         :    25.097875     0.023494    -0.262328
+		                       0.737263    22.137103    -0.039258
+		                       0.494367    -0.039258    22.651976
+		System centre of mass =     0.044853    -0.043127     0.040210
 		Net system momentum   =     0.000000     0.000000     0.000000
+
 
 
 After a few thousand timesteps, the system should move from disorder to form a lamellar lipid bilyer membrane system (**Fig. 1**, lipid "tails" are gray, lipid "head" region is blue, water not shown).
