@@ -127,6 +127,6 @@ On my machine, this produced the following (partial) output:
 
 After a few thousand timesteps, the system should move from complete disorder to form a lamellar bilyer membrane system (**Fig. 1**).
 
-![DPD self-assembled lamellar bilayer membrane system](BLM.png)
+![DPD self-assembled lamellar bilayer membrane system](./blm.png)
 
 ## Notes
