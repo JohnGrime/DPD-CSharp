@@ -130,3 +130,6 @@ After a few thousand timesteps, the system should move from disorder to form a l
 ![DPD self-assembled lamellar bilayer membrane system](./blm.png)
 
 ## Notes
+
+- The PDB file written by `gen_system.py` actually contains the system coords scaled by 10. This is to avoid problems with e.g. [VMD](http://www.ks.uiuc.edu/Research/vmd/) inferring bond information from distances between particles rather than using the `CONECT` entries in the PDB file. The coordinates etc in the actual DPD sim file are unscaled.
+- The use of `UnwrapTrajectories` from [MolecularUtilities](https://github.com/JohnGrime/MolecularUtilities/) can prove to be very useful in visualizing the output, to ensure bonds do not "wrap" across periodic boundaries resulting in a visual mess.
