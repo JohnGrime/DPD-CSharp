@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 using static DPD.Misc;
 
@@ -194,6 +195,7 @@ public class Forces
     //
     // This is the actual DPD pair force calculation for two nonbonded sites.
     //
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void nonbonded_pair( int i, int j, double cutsq, double sqrt_dt, DPDSim sim )
     {
         double dx, dy, dz;

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 
 namespace DPD
 {
@@ -22,6 +23,7 @@ public class Ran1
     //
     // Uniform PRNG
     //
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static double ran1( ref long idum )
     {
         var IA = 16807;
@@ -70,6 +72,7 @@ public class Ran1
     //
     // Sample from Gaussian distribution
     //
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static double gasdev( ref long idum )
     {
         double fac, rsq, v1, v2; 

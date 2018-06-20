@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace DPD
 {
@@ -10,6 +11,7 @@ public class Misc
     // Given the positions of 2 sites, and the simulation cell, this routine calculates
     // the minimum distance between the sites given periodic boundary conditions.
     //
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void VecMinimumImage(
             double x,      double y,      double z,
         ref double x_, ref double y_, ref double z_,

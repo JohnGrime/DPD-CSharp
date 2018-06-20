@@ -104,13 +104,13 @@ public static void LoadSim( StreamReader f, DPDSim sim )
         // i exclusion entry for j
         var l = 0;
         while( l<MaxExclusions && sim.exclude[ (i*MaxExclusions)+l ] != -1 ) l++;
-        if( l == MaxExclusions ) DPDError( "Too few exclusion entries defined (1)" );
+        if( l >= MaxExclusions ) DPDError( "Too few exclusion entries defined (1); increase DPDsim.MaxExclusionEntries" );
         sim.exclude[ (i*MaxExclusions)+l ] = j;
         
         // j exclusion entry for i
         l = 0;
         while( l<MaxExclusions && sim.exclude[ (j*MaxExclusions)+l ] != -1 ) l++;
-        if( l == MaxExclusions ) DPDError( "Too few exclusion entries defined (2)" );
+        if( l >= MaxExclusions ) DPDError( "Too few exclusion entries defined (2); increase DPDsim.MaxExclusionEntries" );
         sim.exclude[ (j*MaxExclusions)+l ] = i;
     }
 
